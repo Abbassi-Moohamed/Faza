@@ -42,7 +42,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
       : d.order.statusPending;
   return (
     <main id="main"><section className="order-status container">
-      {slug ? <BackLink className="order-status__back" href={`/menuscan/${slug}`} label={d.notFound.cta} /> : null}
+      {slug ? <BackLink className="order-status__back" href={`/faza/${slug}`} label={d.notFound.cta} /> : null}
       <h1>{order ? d.order.confirmationTitle : d.order.status}</h1>
       {error ? <p className="admin-form__error">{d.order.orderNotFound}</p> : order ? <>
         <div className={`order-ticket${order.status === "CONFIRMED" ? " order-ticket--confirmed" : ""}`}>

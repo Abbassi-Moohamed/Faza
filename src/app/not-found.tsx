@@ -15,7 +15,7 @@ export default function NotFound() {
         <p className="notice-page__eyebrow">{dict.notFound.eyebrow}</p>
         <h1 className="notice-page__title">{dict.notFound.title}</h1>
         <p className="notice-page__text">{dict.notFound.message}</p>
-        <Link className="notice-page__cta" href="/menuscan">
+        <Link className="notice-page__cta" href="/faza">
           {dict.notFound.cta}
         </Link>
       </div>

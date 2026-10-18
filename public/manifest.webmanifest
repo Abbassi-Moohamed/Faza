@@ -1,6 +1,6 @@
 {
-  "name": "MenuScan — Menu",
-  "short_name": "MenuScan",
+  "name": "Faza — Menu",
+  "short_name": "Faza",
   "description": "Café de spécialité et douceurs de saison. Ouvrez le menu directement sur votre téléphone.",
   "start_url": "/",
   "scope": "/",

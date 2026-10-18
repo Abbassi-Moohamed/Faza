@@ -5,7 +5,7 @@ export interface ActiveTableSession {
 }
 
 export function tableSessionStorageKey(coffeeSlug: string) {
-  return `menuscan:table-session:${coffeeSlug}`;
+  return `faza:table-session:${coffeeSlug}`;
 }
 
 export function readTableSession(coffeeSlug: string): ActiveTableSession | null {

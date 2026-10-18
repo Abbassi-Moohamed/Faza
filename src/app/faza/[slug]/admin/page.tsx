@@ -12,10 +12,10 @@ interface CoffeeAdminPageProps {
 }
 
 /**
- * Coffee backoffice — `/menuscan/:slug/admin`. The slug drives the PIN gate
+ * Coffee backoffice — `/faza/:slug/admin`. The slug drives the PIN gate
  * and is cross-checked against the session's coffee; writes stay token-scoped.
  */
-export default async function MenuscanCoffeeAdminPage({ params }: CoffeeAdminPageProps) {
+export default async function FazaCoffeeAdminPage({ params }: CoffeeAdminPageProps) {
   const { slug } = await params;
   return <CoffeeAdmin coffeeSlug={slug} />;
 }

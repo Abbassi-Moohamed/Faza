@@ -21,5 +21,5 @@ export function slugify(input: string): string {
 
 /** Canonical public route for a coffee's category items page. */
 export function categoryHref(coffeeSlug: string, categoryName: string): string {
-  return `/menuscan/${coffeeSlug}/${slugify(categoryName)}`;
+  return `/faza/${coffeeSlug}/${slugify(categoryName)}`;
 }

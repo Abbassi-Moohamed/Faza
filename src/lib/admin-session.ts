@@ -18,7 +18,7 @@ export interface AdminSession {
   expiresIn: string;
 }
 
-const STORAGE_KEY = "menuscan.admin.session";
+const STORAGE_KEY = "faza.admin.session";
 
 export function readSession(): AdminSession | null {
   if (typeof window === "undefined") return null;

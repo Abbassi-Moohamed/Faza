@@ -36,7 +36,7 @@ import { InsightsDashboard } from "./InsightsDashboard";
 type FormState = { mode: "create" } | { mode: "edit"; coffee: AdminCoffeeDto } | null;
 
 /**
- * MENU SCAN application admin. Only an APP_ADMIN session may get past the
+ * Faza application admin. Only an APP_ADMIN session may get past the
  * PIN gate; the app admin can create, edit, delete and reset the PIN of any
  * coffee.
  */
@@ -239,7 +239,7 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
       title={d.chrome.appTitle}
       subtitle={d.chrome.roleApp}
       headerActions={
-        <Link className="admin-bar__link" href="/menuscan/admin/insights">
+        <Link className="admin-bar__link" href="/faza/admin/insights">
           {d.navigation.insights}
         </Link>
       }
@@ -249,7 +249,7 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
       }}
     >
       {initialView === "insights" ? (
-        <InsightsDashboard dict={dict} fetchAnalytics={fetchAnalytics} onSessionExpired={handleExpired} backHref="/menuscan/admin" />
+        <InsightsDashboard dict={dict} fetchAnalytics={fetchAnalytics} onSessionExpired={handleExpired} backHref="/faza/admin" />
       ) : null}
       {initialView !== "insights" && notice ? (
         <p className="admin-toast" role="status">

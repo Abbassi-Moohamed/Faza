@@ -21,9 +21,9 @@ export async function generateMetadata({ params }: CoffeePageProps): Promise<Met
 }
 
 /**
- * Coffee menu — `/menuscan/:slug`. The slug drives a single backend fetch:
+ * Coffee menu — `/faza/:slug`. The slug drives a single backend fetch:
  * the coffee (and its category names) are the source of truth; every bubble
- * links to its own `/menuscan/:slug/:categName` items page.
+ * links to its own `/faza/:slug/:categName` items page.
  */
 export default async function CoffeePage({ params }: CoffeePageProps) {
   const { slug } = await params;

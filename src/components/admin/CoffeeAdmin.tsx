@@ -456,7 +456,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
       title={coffee?.name ?? coffeeSlug}
       subtitle={d.chrome.roleCoffee}
       logo={coffee?.logo}
-      publicMenuHref={`/menuscan/${coffeeSlug}`}
+      publicMenuHref={`/faza/${coffeeSlug}`}
       hideHeader={initialView === "insights" || isSettingsView}
       headerActions={
         <div className="admin-header-settings">
@@ -483,7 +483,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
                   <Link
                     key={id}
                     className="admin-tabs__option"
-                    href={`/menuscan/${coffeeSlug}/admin/insights`}
+                    href={`/faza/${coffeeSlug}/admin/insights`}
                     role="menuitem"
                     onClick={() => setSettingsOpen(false)}
                   >
@@ -550,7 +550,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
       ) : null}
 
       {initialView === "insights" ? (
-        <InsightsDashboard dict={dict} fetchAnalytics={fetchAnalytics} fetchShiftOptions={fetchShiftOptions} onSessionExpired={handleExpired} backHref={`/menuscan/${coffeeSlug}/admin`} />
+        <InsightsDashboard dict={dict} fetchAnalytics={fetchAnalytics} fetchShiftOptions={fetchShiftOptions} onSessionExpired={handleExpired} backHref={`/faza/${coffeeSlug}/admin`} />
       ) : null}
 
       {initialView !== "insights" && !isSettingsView ? <nav className="admin-tabs" role="tablist" aria-label={d.chrome.roleCoffee}>

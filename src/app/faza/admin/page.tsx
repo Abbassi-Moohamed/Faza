@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * MENU SCAN application admin — `/menuscan/admin`. The PIN gate and the whole
+ * Faza application admin — `/faza/admin`. The PIN gate and the whole
  * backoffice are client-driven.
  */
 export default function AppAdminPage() {

@@ -5,10 +5,10 @@ export interface CartLine {
   quantity: number;
 }
 
-const eventName = "menuscan-cart-change";
+const eventName = "faza-cart-change";
 
 export function cartStorageKey(coffeeSlug: string) {
-  return `menuscan:cart:${coffeeSlug}`;
+  return `faza:cart:${coffeeSlug}`;
 }
 
 export function readCart(coffeeSlug: string): CartLine[] {

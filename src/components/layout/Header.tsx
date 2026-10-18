@@ -17,7 +17,7 @@ export function Header({ viewOrder }: HeaderProps) {
   const pathParts = pathname.split("/").filter(Boolean);
   const isAdminPage = pathParts.includes("admin");
   const coffeeSlug =
-    pathParts[0] === "menuscan" && pathParts.length >= 2 && !isAdminPage
+    pathParts[0] === "faza" && pathParts.length >= 2 && !isAdminPage
       ? pathParts[1]
       : null;
 
@@ -25,7 +25,7 @@ export function Header({ viewOrder }: HeaderProps) {
     if (!coffeeSlug) return;
 
     const syncOrder = () => {
-      setActiveOrderId(window.localStorage.getItem(`menuscan:active-order:${coffeeSlug}`));
+      setActiveOrderId(window.localStorage.getItem(`faza:active-order:${coffeeSlug}`));
     };
     syncOrder();
     window.addEventListener(cartEventName(), syncOrder);
@@ -48,7 +48,7 @@ export function Header({ viewOrder }: HeaderProps) {
         {activeOrderId && coffeeSlug ? (
           <Link
             className="header-order-link"
-            href={`/menuscan/${coffeeSlug}/order/${activeOrderId}`}
+            href={`/faza/${coffeeSlug}/order/${activeOrderId}`}
           >
             <span className="header-order-link__icon" aria-hidden="true">📋</span>
             {viewOrder}

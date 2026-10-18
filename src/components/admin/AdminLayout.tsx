@@ -11,7 +11,7 @@ interface AdminLayoutProps {
   title: string;
   /** Optional label under the title (role). */
   subtitle?: string;
-  /** Optional current coffee logo. App-admin keeps the MENU SCAN mark. */
+  /** Optional current coffee logo. App-admin keeps the Faza mark. */
   logo?: string | null;
   /** Optional public menu link (coffee admin). */
   publicMenuHref?: string;

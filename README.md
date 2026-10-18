@@ -1,12 +1,12 @@
-# MENU SCAN Frontend
+# Faza Frontend
 
-MENU SCAN is a mobile-first digital menu for coffee shops. A QR code opens a
+Faza is a mobile-first digital menu for coffee shops. A QR code opens a
 coffee-specific URL, where guests discover categories and menu items without
 installing an app. The frontend is a Next.js App Router application that
 renders the public menu, provides the two PIN-protected backoffice
-experiences, and communicates with the MENU SCAN Express.js + MongoDB backend.
+experiences, and communicates with the Faza Express.js + MongoDB backend.
 
-The production site uses `/menuscan` as its canonical namespace. Older
+The production site uses `/faza` as its canonical namespace. Older
 bare-root links remain supported through permanent redirects.
 
 ## Project overview
@@ -17,7 +17,7 @@ bare-root links remain supported through permanent redirects.
 QR code
    |
    v
-/menuscan/:slug
+/faza/:slug
    |
    v
 Coffee
@@ -26,7 +26,7 @@ Coffee
 Organic category bubbles
    |
    v
-/menuscan/:slug/:categName
+/faza/:slug/:categName
    |
    v
 Item cards
@@ -40,18 +40,18 @@ hardcoded into the UI.
 ### Backoffice
 
 ```text
-/menuscan/admin
+/faza/admin
    |
    v
 Application admin
 
-/menuscan/:slug/admin
+/faza/:slug/admin
    |
    v
 Coffee admin
 
-/menuscan/admin/insights
-/menuscan/:slug/admin/insights
+/faza/admin/insights
+/faza/:slug/admin/insights
    |
    v
 Analytics dashboard
@@ -99,14 +99,14 @@ frontend/
 â”‚   â””â”€â”€ manifest.webmanifest
 â”œâ”€â”€ src/
 â”‚   â”œâ”€â”€ app/
-â”‚   â”‚   â”œâ”€â”€ page.tsx                         # Redirects / -> /menuscan
+â”‚   â”‚   â”œâ”€â”€ page.tsx                         # Redirects / -> /faza
 â”‚   â”‚   â”œâ”€â”€ layout.tsx                       # Root layout, fonts, metadata, public chrome
 â”‚   â”‚   â”œâ”€â”€ globals.css                      # Shared public and admin design system
 â”‚   â”‚   â”œâ”€â”€ error.tsx                        # Branded runtime error boundary
 â”‚   â”‚   â”œâ”€â”€ not-found.tsx                    # Branded global 404
 â”‚   â”‚   â”œâ”€â”€ [coffeeSlug]/page.tsx            # Legacy public coffee redirect
 â”‚   â”‚   â”œâ”€â”€ [coffeeSlug]/admin/page.tsx      # Legacy coffee-admin redirect
-â”‚   â”‚   â””â”€â”€ menuscan/
+â”‚   â”‚   â””â”€â”€ faza/
 â”‚   â”‚       â”œâ”€â”€ page.tsx                     # Canonical brand landing page
 â”‚   â”‚       â”œâ”€â”€ admin/page.tsx               # Application-admin route
 â”‚   â”‚       â””â”€â”€ [slug]/
@@ -153,8 +153,8 @@ fields belong in `src/types/menu.ts` and `src/lib/adapters.ts`.
 
 ## Routing architecture
 
-The authenticated Insights pages are `/menuscan/:slug/admin/insights` for
-coffee administrators and `/menuscan/admin/insights` for the application
+The authenticated Insights pages are `/faza/:slug/admin/insights` for
+coffee administrators and `/faza/admin/insights` for the application
 administrator. `InsightsDashboard` sends one typed request through
 `src/lib/api.ts` for each selected range and renders the compact
 `AnalyticsDto`; it never downloads orders or calculates business metrics in
@@ -194,15 +194,15 @@ recalculated or overwritten.
 
 | Route | Implementation | Data/access |
 | --- | --- | --- |
-| `/` | `src/app/page.tsx` | Permanent redirect to `/menuscan` |
-| `/menuscan` | `src/app/menuscan/page.tsx` | Public brand landing; no backend data |
-| `/:coffeeSlug` | `src/app/[coffeeSlug]/page.tsx` | Permanent redirect to `/menuscan/:coffeeSlug` |
-| `/menuscan/:slug` | `src/app/menuscan/[slug]/page.tsx` | Server-fetches a coffee and its category summaries by slug |
-| `/menuscan/:slug/:categName` | `src/app/menuscan/[slug]/[categName]/page.tsx` | Resolves category within that coffee, then fetches category items |
-| `/menuscan/admin` | `src/app/menuscan/admin/page.tsx` | Client-driven application-admin PIN gate and console |
-| `/menuscan/admin/insights` | `src/app/menuscan/admin/insights/page.tsx` | Authenticated application analytics dashboard |
-| `/menuscan/:slug/admin` | `src/app/menuscan/[slug]/admin/page.tsx` | Client-driven coffee-admin PIN gate and console |
-| `/menuscan/:slug/admin/insights` | `src/app/menuscan/[slug]/admin/insights/page.tsx` | Authenticated coffee analytics dashboard |
+| `/` | `src/app/page.tsx` | Permanent redirect to `/faza` |
+| `/faza` | `src/app/faza/page.tsx` | Public brand landing; no backend data |
+| `/:coffeeSlug` | `src/app/[coffeeSlug]/page.tsx` | Permanent redirect to `/faza/:coffeeSlug` |
+| `/faza/:slug` | `src/app/faza/[slug]/page.tsx` | Server-fetches a coffee and its category summaries by slug |
+| `/faza/:slug/:categName` | `src/app/faza/[slug]/[categName]/page.tsx` | Resolves category within that coffee, then fetches category items |
+| `/faza/admin` | `src/app/faza/admin/page.tsx` | Client-driven application-admin PIN gate and console |
+| `/faza/admin/insights` | `src/app/faza/admin/insights/page.tsx` | Authenticated application analytics dashboard |
+| `/faza/:slug/admin` | `src/app/faza/[slug]/admin/page.tsx` | Client-driven coffee-admin PIN gate and console |
+| `/faza/:slug/admin/insights` | `src/app/faza/[slug]/admin/insights/page.tsx` | Authenticated coffee analytics dashboard |
 | `/:coffeeSlug/admin` | `src/app/[coffeeSlug]/admin/page.tsx` | Permanent redirect to canonical coffee-admin route |
 
 The category URL uses `slugify(category.name)`. It is not a backend category
@@ -217,7 +217,7 @@ coffee.
 QR code
     |
     v
-Extract `slug` from `/menuscan/:slug`
+Extract `slug` from `/faza/:slug`
     |
     v
 GET /api/v1/coffees/:coffeeSlug
@@ -226,7 +226,7 @@ GET /api/v1/coffees/:coffeeSlug
 Render coffee name/logo and dynamic category bubbles
     |
     v
-User opens `/menuscan/:slug/:categName`
+User opens `/faza/:slug/:categName`
     |
     v
 Resolve category name within the coffee
@@ -352,7 +352,7 @@ message instead of asking for the table again.
 ### Session persistence and recovery
 
 The frontend stores the session token using `localStorage`, scoped by the
-coffee slug (`menuscan:table-session:<coffeeSlug>`). This prevents one coffee's
+coffee slug (`faza:table-session:<coffeeSlug>`). This prevents one coffee's
 active session from being reused on another coffee. The token is never exposed to
 normal visitors and no extra order history is persisted beyond the session token
 itself.
@@ -539,7 +539,7 @@ their header. A category with zero items renders the translated
 Both backoffice surfaces are client components because they manage PIN input,
 session restoration, CRUD mutations, tabs, dialogs, and transient notices.
 
-### Application admin: `/menuscan/admin`
+### Application admin: `/faza/admin`
 
 `AppAdmin` accepts only an `APP_ADMIN` session. After authentication it:
 
@@ -553,7 +553,7 @@ session restoration, CRUD mutations, tabs, dialogs, and transient notices.
 New coffee slug generation is intentionally delegated to the backend. Edit-mode
 slug input accepts lowercase letters, numbers, and hyphens.
 
-### Coffee admin: `/menuscan/:slug/admin`
+### Coffee admin: `/faza/:slug/admin`
 
 `CoffeeAdmin` accepts only a `COFFEE_ADMIN` session. It loads the token-scoped
 coffee and verifies that its returned slug equals the route slug. A mismatch
@@ -603,7 +603,7 @@ Render the appropriate admin console
 `AdminPinGate` accepts digits only, limits input to four characters, and submits
 only when exactly four digits are present. The returned token, role,
 optional `coffeeId`, and `expiresIn` are stored under
-`menuscan.admin.session` in `sessionStorage`, not `localStorage`. A tab close
+`faza.admin.session` in `sessionStorage`, not `localStorage`. A tab close
 therefore removes the browser-held session. PIN values themselves are never
 persisted.
 
@@ -775,7 +775,7 @@ technical backend object.
 ### Session token persistence
 
 The browser stores only a minimal session token and table number under a
-coffee-scoped key such as `menuscan:table-session:<slug>`. The token is never
+coffee-scoped key such as `faza:table-session:<slug>`. The token is never
 shown to the visitor and never persisted beyond the browser storage available
 on that device. If the backend rejects the token, the session expires, the
 coffee changes, or the browser storage is unavailable, the UI clears the saved
@@ -834,12 +834,12 @@ all services when no service is chosen.
 - all session and shift states are recovered gracefully when the backend rejects
   or closes them.
 
-This preserves the existing MENU SCAN visual design while adding the service
+This preserves the existing Faza visual design while adding the service
 shift and table-session lifecycle expected by the café workflow.
 
 ## Local development
 
-Prerequisites: a current Node.js installation and a running MENU SCAN backend
+Prerequisites: a current Node.js installation and a running Faza backend
 with MongoDB configured.
 
 ```bash
@@ -870,20 +870,20 @@ npm run typecheck # TypeScript without emitting files
 To test the public experience, open:
 
 ```text
-http://localhost:3000/menuscan/<coffee-slug>
+http://localhost:3000/faza/<coffee-slug>
 ```
 
 Then open a category bubble, or directly test:
 
 ```text
-http://localhost:3000/menuscan/<coffee-slug>/<category-name-slug>
+http://localhost:3000/faza/<coffee-slug>/<category-name-slug>
 ```
 
 To test administration:
 
 ```text
-http://localhost:3000/menuscan/admin
-http://localhost:3000/menuscan/<coffee-slug>/admin
+http://localhost:3000/faza/admin
+http://localhost:3000/faza/<coffee-slug>/admin
 ```
 
 Use the PINs configured in the backend or provisioned by the backend
@@ -894,7 +894,7 @@ administrator. Do not put real PINs in source control or documentation.
 The expected deployment topology is:
 
 ```text
-MENU SCAN Next.js
+Faza Next.js
         |
         v
 Express API
@@ -913,8 +913,8 @@ For a production Next.js deployment:
    the user's browser.
 5. Configure backend CORS to allow the deployed frontend origin.
 
-The public URL structure is `/menuscan/<coffee-slug>` and
-`/menuscan/<coffee-slug>/<category-slug>`. If a reverse proxy or custom domain
+The public URL structure is `/faza/<coffee-slug>` and
+`/faza/<coffee-slug>/<category-slug>`. If a reverse proxy or custom domain
 is added, preserve those paths and forward `/api/v1/*` through the Next
 application.
 
@@ -969,7 +969,7 @@ copy. Avoid inline customer-facing strings in components.
 | Symptom | Likely cause and solution |
 | --- | --- |
 | Coffee menu does not load | Check that the slug exists in MongoDB, the backend is running, and both backend URL variables point to the API origin. A `400`/`404` is intentionally shown as a 404 page. |
-| Admin PIN is rejected | Confirm that the PIN belongs to the correct scope: app PIN for `/menuscan/admin`, coffee PIN for `/menuscan/:slug/admin`. The gate accepts exactly four digits. |
+| Admin PIN is rejected | Confirm that the PIN belongs to the correct scope: app PIN for `/faza/admin`, coffee PIN for `/faza/:slug/admin`. The gate accepts exactly four digits. |
 | Categories are empty | The coffee API returned no category summaries. Create categories in the coffee backoffice and reload the public menu. |
 | Items are not displayed | Confirm the selected category has items and that `/api/v1/categories/:categoryId/items` is reachable. A successful empty array is rendered as an empty state. |
 | Images do not load | Images must be absolute `http`/`https` URLs. The UI falls back to gradient art when the remote image fails. |
@@ -986,12 +986,12 @@ copy. Avoid inline customer-facing strings in components.
 
 | Route | Purpose | Access |
 | --- | --- | --- |
-| `/` | Redirect to MENU SCAN landing | Public |
-| `/menuscan` | MENU SCAN brand landing | Public |
-| `/menuscan/:slug` | Coffee menu and category bubbles | Public |
-| `/menuscan/:slug/:categName` | Items for one coffee category | Public |
-| `/menuscan/admin` | Application backoffice | Four-digit PIN |
-| `/menuscan/:slug/admin` | Coffee backoffice | Four-digit PIN |
+| `/` | Redirect to Faza landing | Public |
+| `/faza` | Faza brand landing | Public |
+| `/faza/:slug` | Coffee menu and category bubbles | Public |
+| `/faza/:slug/:categName` | Items for one coffee category | Public |
+| `/faza/admin` | Application backoffice | Four-digit PIN |
+| `/faza/:slug/admin` | Coffee backoffice | Four-digit PIN |
 | `/:coffeeSlug` | Legacy redirect to canonical coffee menu | Public |
 | `/:coffeeSlug/admin` | Legacy redirect to canonical coffee backoffice | Four-digit PIN |
 
@@ -1041,7 +1041,7 @@ DELETE /api/v1/admin/my-coffee/items/:itemId
 
 ## License
 
-Private â€” Â© MenuScan.
+Private â€” Â© Faza.
 
 ## Cart and order architecture
 
@@ -1055,7 +1055,7 @@ Cart = local, not submitted
 Order = backend record, already submitted
 ```
 
-- A cart is stored in `localStorage` under `menuscan:cart:<coffeeSlug>`.
+- A cart is stored in `localStorage` under `faza:cart:<coffeeSlug>`.
 - Each coffee has an isolated cart; switching coffee slugs never reuses the
   previous coffee's lines.
 - Cart lines store the item identity, display snapshot (name/price/promotion/
@@ -1064,10 +1064,10 @@ Order = backend record, already submitted
 - Adding an item increments its quantity. The minus control decrements and
   removes the line at zero. The plus control is disabled when the item is
   known to be unavailable.
-- `menuscan-cart-change` is a browser `CustomEvent` used to synchronize the
+- `faza-cart-change` is a browser `CustomEvent` used to synchronize the
   floating cart and category add controls in the same tab.
 - The cart is cleared only after `POST /orders` succeeds. The returned order ID
-  is stored as `menuscan:active-order:<coffeeSlug>` so the visitor can reopen
+  is stored as `faza:active-order:<coffeeSlug>` so the visitor can reopen
   the submitted order from the menu.
 - Availability is evaluated only when the current page has authoritative item
   data. This prevents an item from another category, still present in the
@@ -1083,7 +1083,7 @@ subtotals, total, table number, status, and timestamps. Historical order
 pricing is displayed from that snapshot rather than recalculated from the
 current menu.
 
-The order route `/menuscan/:slug/order/:orderId` loads the order on mount and
+The order route `/faza/:slug/order/:orderId` loads the order on mount and
 renders a themed ticket. It has reusable back navigation to the coffee menu and
 an accessible refresh icon. Refresh performs a new `GET /orders/:orderId`,
 prevents duplicate clicks while in flight, clears a previous error, animates
@@ -1188,7 +1188,7 @@ README. The backend must allow the deployed frontend origin through CORS.
 
 - The backend is the source of truth for coffee data, prices, availability,
   order status, authorization, and validation.
-- Public routes are coffee-scoped under `/menuscan/:slug`; category URLs use a
+- Public routes are coffee-scoped under `/faza/:slug`; category URLs use a
   slugified display name resolved back to a category ID within that coffee.
 - Visitors do not authenticate. Admin sessions use short-lived bearer tokens
   in `sessionStorage`, not `localStorage`; PINs are never persisted.

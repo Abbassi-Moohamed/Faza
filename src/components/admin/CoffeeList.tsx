@@ -67,11 +67,11 @@ export function CoffeeList({
           </span>
           <div className="coffee-list__body">
             <span className="coffee-list__name">{coffee.name}</span>
-            <span className="coffee-list__slug">/menuscan/{coffee.slug}</span>
+            <span className="coffee-list__slug">/faza/{coffee.slug}</span>
             <span className="coffee-list__count">{d.app.categoryCount(coffee.categoryCount)}</span>
           </div>
           <div className="coffee-list__actions">
-            <Link className="coffee-list__action coffee-list__action--menu" href={`/menuscan/${coffee.slug}`}>
+            <Link className="coffee-list__action coffee-list__action--menu" href={`/faza/${coffee.slug}`}>
               {d.app.openMenu}
             </Link>
             <button type="button" className="coffee-list__action" onClick={() => onEdit(coffee)}>

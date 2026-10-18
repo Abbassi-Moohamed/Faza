@@ -4,8 +4,8 @@ interface LegacyCoffeeAdminRedirectProps {
   params: Promise<{ coffeeSlug: string }>;
 }
 
-/** `/:coffeeSlug/admin` → `/menuscan/:coffeeSlug/admin` — legacy links. */
+/** `/:coffeeSlug/admin` → `/faza/:coffeeSlug/admin` — legacy links. */
 export default async function LegacyCoffeeAdminRedirect({ params }: LegacyCoffeeAdminRedirectProps) {
   const { coffeeSlug } = await params;
-  permanentRedirect(`/menuscan/${coffeeSlug}/admin`);
+  permanentRedirect(`/faza/${coffeeSlug}/admin`);
 }

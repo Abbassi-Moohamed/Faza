@@ -913,7 +913,7 @@ img {
 }
 
 /* ---------------------------------------------------------------- */
-/* Category items page (full page at /menuscan/:slug/:categName)     */
+/* Category items page (full page at /faza/:slug/:categName)     */
 /* ---------------------------------------------------------------- */
 
 .category-page__header {
@@ -1797,7 +1797,7 @@ img {
 }
 
 /* ---------------------------------------------------------------- */
-/* Backoffice (MENU SCAN admin)                                      */
+/* Backoffice (Faza admin)                                      */
 /* Functional, clean layout — deliberately separated from the        */
 /* playful public "bubble" design while reusing the brand tokens.    */
 /* ---------------------------------------------------------------- */

@@ -19,7 +19,7 @@ import { clearTableSession, readTableSession, writeTableSession } from "@/lib/ta
 import type { MenuItem } from "@/types/menu";
 import { ItemArt } from "@/components/menu/ItemArt";
 
-const activeOrderKey = (coffeeSlug: string) => `menuscan:active-order:${coffeeSlug}`;
+const activeOrderKey = (coffeeSlug: string) => `faza:active-order:${coffeeSlug}`;
 
 interface OrderCenterProps {
   coffeeSlug: string;
@@ -98,7 +98,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
       setLines([]);
       setActiveOrderId(order.id);
       setOpen(false);
-      router.push(`/menuscan/${coffeeSlug}/order/${order.id}`);
+      router.push(`/faza/${coffeeSlug}/order/${order.id}`);
     } catch (e) {
       const status = e instanceof ApiClientError ? e.status : 0;
       if (status === 401 || status === 404 || status === 400) {

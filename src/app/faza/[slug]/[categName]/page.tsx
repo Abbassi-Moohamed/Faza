@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 /**
- * Category items page — `/menuscan/:slug/:categName`. The category is resolved
+ * Category items page — `/faza/:slug/:categName`. The category is resolved
  * strictly WITHIN the coffee returned by the backend (`slugify(name)` match),
  * so a category that belongs to another coffee can never leak its items here;
  * unknown coffees and unknown/mismatched categories are clean not-founds.
@@ -62,7 +62,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     <main id="main">
       <section className="category-page">
         <div className="container category-page__header">
-          <BackLink className="category-page__back" href={`/menuscan/${slug}`} label={dict.sheet.backLabel} />
+          <BackLink className="category-page__back" href={`/faza/${slug}`} label={dict.sheet.backLabel} />
           <div className="category-page__heading">
             <h1 className="category-page__title">{category.name}</h1>
             <p className="category-page__count">{dict.sheet.itemsCountLabel(menuItems.length)}</p>

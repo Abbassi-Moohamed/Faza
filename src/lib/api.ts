@@ -124,7 +124,7 @@ function jsonBody(value: unknown): RequestInit {
   return { body: JSON.stringify(value) };
 }
 
-/** POST /api/v1/admin/images — the browser sends files only to MENU SCAN. */
+/** POST /api/v1/admin/images — the browser sends files only to Faza. */
 export async function uploadImage(token: string, file: File): Promise<AdminImageDto> {
   const form = new FormData();
   form.append("file", file);

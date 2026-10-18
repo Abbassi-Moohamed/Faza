@@ -10,7 +10,7 @@ interface BrandIntroProps {
   cover?: string | null;
   /** Eyebrow pill text. Defaults to the menu eyebrow. */
   eyebrow?: string;
-  /** Description line (used on the MENU SCAN landing page). */
+  /** Description line (used on the Faza landing page). */
   description?: string;
   /** Title of the menu strip, e.g. "Notre carte" (coffee pages). */
   menuTitle?: string;

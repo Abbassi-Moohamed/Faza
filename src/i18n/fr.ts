@@ -73,7 +73,7 @@ export const fr: Dictionary = {
   },
   admin: {
     chrome: {
-      appTitle: "MENU SCAN",
+      appTitle: "Faza",
       roleApp: "Administration",
       roleCoffee: "Espace café",
       logout: "Déconnexion",
@@ -81,7 +81,7 @@ export const fr: Dictionary = {
     },
     gate: {
       title: "Administration",
-      appSubtitle: "Console MENU SCAN — entrez votre code à 4 chiffres.",
+      appSubtitle: "Console Faza — entrez votre code à 4 chiffres.",
       coffeeSubtitle: "Espace du café — entrez le code à 4 chiffres.",
       label: "Code à 4 chiffres",
       verify: "Accéder",

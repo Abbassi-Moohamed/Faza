@@ -28,7 +28,7 @@ interface CategoryLinkProps {
 
 /**
  * One organic bubble, now a real `<a>` — the whole coffee menu is server
- * rendered and every bubble deep-links to `/menuscan/:slug/:categName`.
+ * rendered and every bubble deep-links to `/faza/:slug/:categName`.
  */
 function CategoryLink({
   coffeeSlug,

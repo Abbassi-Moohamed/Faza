@@ -3,11 +3,11 @@ import { siteConfig } from "@/config/site";
 import { getDictionary } from "@/i18n";
 
 /**
- * MENU SCAN brand landing — `/menuscan`, the single root namespace of the
+ * Faza brand landing — `/faza`, the single root namespace of the
  * app. Explicitly NOT a specific coffee: cafés are reachable through their
- * own public route `/menuscan/:slug` (QR code → menu).
+ * own public route `/faza/:slug` (QR code → menu).
  */
-export default function MenuscanLandingPage() {
+export default function FazaLandingPage() {
   const dict = getDictionary();
 
   return (
