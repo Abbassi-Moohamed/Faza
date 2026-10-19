@@ -13,13 +13,7 @@ import {
   openServiceShift,
 } from "@/lib/api";
 import { listOrders, markOrderPaid, updateOrderStatus } from "@/lib/orders";
-import type {
-  OrderDto,
-  OrderStatus,
-  ServiceShiftDto,
-  TablePaymentOrderDto,
-  TableSessionDto,
-} from "@/types/backend";
+import type { OrderDto, OrderStatus, ServiceShiftDto, TablePaymentOrderDto, TableSessionDto } from "@/types/backend";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 
 const firstShiftLabel = (shift: ServiceShiftDto | null) => {
@@ -55,45 +49,31 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const d = dict.admin.orders;
   const serviceDict = dict.admin.service;
   const [filter, setFilter] = useState<OrderStatus>("PENDING");
-  const [paymentFilter, setPaymentFilter] = useState<"ALL" | "PAID" | "UNPAID">(
-    "ALL",
-  );
+  const [paymentFilter, setPaymentFilter] = useState<"ALL" | "PAID" | "UNPAID">("ALL");
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [currentShift, setCurrentShift] = useState<ServiceShiftDto | null>(
-    null,
-  );
+  const [currentShift, setCurrentShift] = useState<ServiceShiftDto | null>(null);
   const [history, setHistory] = useState<ServiceShiftDto[]>([]);
   const [serviceView, setServiceView] = useState<"current" | "history">("current");
   const [historyRange, setHistoryRange] = useState<"today" | "all">("today");
   const [sessions, setSessions] = useState<TableSessionDto[]>([]);
-  const [shiftType, setShiftType] = useState<
-    "MORNING" | "AFTERNOON" | "CUSTOM"
-  >("MORNING");
+  const [shiftType, setShiftType] = useState<"MORNING" | "AFTERNOON" | "CUSTOM">("MORNING");
   const [shiftBusy, setShiftBusy] = useState(false);
   const [closeShiftBusy, setCloseShiftBusy] = useState(false);
   const [closeTableBusy, setCloseTableBusy] = useState<string | null>(null);
-  const [paymentTarget, setPaymentTarget] = useState<Pick<
-    OrderDto,
-    "id" | "tableNumber" | "total"
-  > | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<Pick<OrderDto, "id" | "tableNumber" | "total"> | null>(null);
   const [tablePayment, setTablePayment] = useState<{
     sessionId: string;
     tableNumber: number;
     orders: TablePaymentOrderDto[];
   } | null>(null);
   const [paymentBusy, setPaymentBusy] = useState(false);
-  const [serviceCloseTables, setServiceCloseTables] = useState<
-    OpenServiceTable[] | null
-  >(null);
+  const [serviceCloseTables, setServiceCloseTables] = useState<OpenServiceTable[] | null>(null);
   const [returnToServiceClose, setReturnToServiceClose] = useState(false);
   const [noActiveServiceOrder, setNoActiveServiceOrder] = useState<string | null>(null);
   const loadOrders = useCallback(() => {
     const status = section === "orders" ? filter : undefined;
-    const paymentStatus =
-      section === "orders" && paymentFilter !== "ALL"
-        ? paymentFilter
-        : undefined;
+    const paymentStatus = section === "orders" && paymentFilter !== "ALL" ? paymentFilter : undefined;
     void listOrders(token, status, paymentStatus)
       .then((result) => setOrders(result.orders))
       .catch((e) => setError(e instanceof Error ? e.message : "Erreur"));
@@ -159,8 +139,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     try {
       await openServiceShift(token, {
         type: shiftType,
-        name:
-          shiftType === "MORNING" ? serviceDict.morning : serviceDict.afternoon,
+        name: shiftType === "MORNING" ? serviceDict.morning : serviceDict.afternoon,
       });
       await loadShiftData();
     } finally {
@@ -200,11 +179,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         );
         return;
       }
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Le service n'a pas pu être clôturé.",
-      );
+      setError(e instanceof Error ? e.message : "Le service n'a pas pu être clôturé.");
     } finally {
       setCloseShiftBusy(false);
     }
@@ -221,9 +196,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     setError(null);
     try {
       const updated = await markOrderPaid(token, paymentTarget.id);
-      setOrders((current) =>
-        current.map((order) => (order.id === updated.id ? updated : order)),
-      );
+      setOrders((current) => current.map((order) => (order.id === updated.id ? updated : order)));
       setPaymentTarget(null);
       if (paymentSessionId) {
         const refreshed = await getTableSession(token, paymentSessionId);
@@ -235,11 +208,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       }
       await loadShiftData();
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Impossible d'enregistrer le paiement.",
-      );
+      setError(e instanceof Error ? e.message : "Impossible d'enregistrer le paiement.");
     } finally {
       setPaymentBusy(false);
     }
@@ -249,10 +218,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     const detail = await getTableSession(token, sessionId);
     const tableOrders = detail.summary?.orders ?? [];
     const pending = tableOrders.filter((order) => order.status === "PENDING");
-    const unpaid = tableOrders.filter(
-      (order) =>
-        order.status === "CONFIRMED" && order.paymentStatus === "UNPAID",
-    );
+    const unpaid = tableOrders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "UNPAID");
     if (pending.length > 0 || unpaid.length > 0) {
       setTablePayment({
         sessionId,
@@ -276,9 +242,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const handleTableOrderStatus = async (order: TablePaymentOrderDto, status: OrderStatus) => {
     try {
       const updated = await updateOrderStatus(token, order.id, status);
-      setOrders((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item)),
-      );
+      setOrders((current) => current.map((item) => (item.id === updated.id ? updated : item)));
       if (tablePayment) await refreshTablePayment(tablePayment.sessionId);
       await loadShiftData();
     } catch (e) {
@@ -294,11 +258,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         setNoActiveServiceOrder(order.id);
         return;
       }
-      setError(
-        e instanceof Error
-          ? e.message
-          : "La commande n'a pas pu être mise à jour.",
-      );
+      setError(e instanceof Error ? e.message : "La commande n'a pas pu être mise à jour.");
     }
   };
 
@@ -309,9 +269,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       const canClose = await openTablePayment(sessionId);
       if (!canClose) return;
       await closeTableSession(token, sessionId);
-      setSessions((current) =>
-        current.filter((session) => session.id !== sessionId),
-      );
+      setSessions((current) => current.filter((session) => session.id !== sessionId));
       await loadShiftData();
       if (returnToServiceClose && currentShift?.id) {
         const refreshed = await listTableSessions(token, {
@@ -333,14 +291,10 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         try {
           await openTablePayment(sessionId);
         } catch {
-          setError(
-            "La table n'a pas pu être vérifiée. Actualisez les données et réessayez.",
-          );
+          setError("La table n'a pas pu être vérifiée. Actualisez les données et réessayez.");
         }
       } else {
-        setError(
-          e instanceof Error ? e.message : "La table n'a pas pu être clôturée.",
-        );
+        setError(e instanceof Error ? e.message : "La table n'a pas pu être clôturée.");
       }
     } finally {
       setCloseTableBusy(null);
@@ -348,30 +302,19 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   };
 
   const tableUnpaidOrders =
-    tablePayment?.orders.filter(
-      (order) =>
-        order.status === "CONFIRMED" && order.paymentStatus === "UNPAID",
-    ) ?? [];
-  const tablePendingOrders =
-    tablePayment?.orders.filter((order) => order.status === "PENDING") ?? [];
+    tablePayment?.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "UNPAID") ?? [];
+  const tablePendingOrders = tablePayment?.orders.filter((order) => order.status === "PENDING") ?? [];
   const tableTotal =
-    tablePayment?.orders
-      .filter((order) => order.status === "CONFIRMED")
-      .reduce((sum, order) => sum + order.total, 0) ?? 0;
+    tablePayment?.orders.filter((order) => order.status === "CONFIRMED").reduce((sum, order) => sum + order.total, 0) ??
+    0;
   const tablePaid =
     tablePayment?.orders
-      .filter(
-        (order) =>
-          order.status === "CONFIRMED" && order.paymentStatus === "PAID",
-      )
+      .filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "PAID")
       .reduce((sum, order) => sum + order.total, 0) ?? 0;
   const tableRemaining = tableTotal - tablePaid;
 
   const groupedTables = useMemo(() => {
-    const map = new Map<
-      string,
-      { session: TableSessionDto; orders: OrderDto[] }
-    >();
+    const map = new Map<string, { session: TableSessionDto; orders: OrderDto[] }>();
     for (const session of sessions) {
       if (session.status !== "ACTIVE") continue;
       map.set(session.id, { session, orders: [] });
@@ -381,9 +324,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       const current = map.get(key);
       if (current) current.orders.push(order);
     }
-    return Array.from(map.values()).filter(
-      (entry) => entry.orders.length > 0 || entry.session.status === "ACTIVE",
-    );
+    return Array.from(map.values()).filter((entry) => entry.orders.length > 0 || entry.session.status === "ACTIVE");
   }, [orders, sessions]);
 
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -433,10 +374,18 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               <strong>{firstShiftLabel(currentShift)}</strong>
               <div className="service-live-label">● Live · {serviceDict.statusOpen}</div>
               <div className="service-current-metrics">
-                <span><strong>{(currentSummary?.paidRevenue ?? 0).toFixed(3)} DT</strong>Chiffre d&apos;affaires</span>
-                <span><strong>{currentSummary?.totalOrders ?? 0}</strong>Commandes</span>
-                <span><strong>{sessions.length}</strong>Tables actives</span>
-                <span><strong>{currentSummary?.paidOrders ?? 0}</strong>Commandes payées</span>
+                <span>
+                  <strong>{(currentSummary?.paidRevenue ?? 0).toFixed(3)} DT</strong>Chiffre d&apos;affaires
+                </span>
+                <span>
+                  <strong>{currentSummary?.totalOrders ?? 0}</strong>Commandes
+                </span>
+                <span>
+                  <strong>{sessions.length}</strong>Tables actives
+                </span>
+                <span>
+                  <strong>{currentSummary?.paidOrders ?? 0}</strong>Commandes payées
+                </span>
               </div>
               <div style={{ marginTop: "0.5rem" }}>
                 <button
@@ -445,9 +394,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   onClick={requestCloseShift}
                   disabled={closeShiftBusy}
                 >
-                  {closeShiftBusy
-                    ? serviceDict.closing
-                    : serviceDict.closeService}
+                  {closeShiftBusy ? serviceDict.closing : serviceDict.closeService}
                 </button>
               </div>
             </>
@@ -460,11 +407,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   <select
                     className="admin-field__input"
                     value={shiftType}
-                    onChange={(e) =>
-                      setShiftType(
-                        e.target.value as "MORNING" | "AFTERNOON" | "CUSTOM",
-                      )
-                    }
+                    onChange={(e) => setShiftType(e.target.value as "MORNING" | "AFTERNOON" | "CUSTOM")}
                   >
                     <option value="MORNING">{serviceDict.morning}</option>
                     <option value="AFTERNOON">{serviceDict.afternoon}</option>
@@ -501,11 +444,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               .filter((order) => order.status === "CONFIRMED")
               .reduce((sum, order) => sum + order.total, 0);
             const totalPaid = entry.orders
-              .filter(
-                (order) =>
-                  order.status === "CONFIRMED" &&
-                  order.paymentStatus === "PAID",
-              )
+              .filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "PAID")
               .reduce((sum, order) => sum + order.total, 0);
             const totalOutstanding = totalConfirmed - totalPaid;
             const totalPending = entry.orders
@@ -532,28 +471,19 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                         Payé <strong>{totalPaid.toFixed(2)} DT</strong>
                       </span>
                       <span>
-                        À payer{" "}
-                        <strong>{totalOutstanding.toFixed(2)} DT</strong>
+                        À payer <strong>{totalOutstanding.toFixed(2)} DT</strong>
                       </span>
                     </div>
                     {entry.orders.map((order) => (
                       <div className="order-admin-card__item" key={order.id}>
-                        <strong>
-                          {order.status === "CONFIRMED"
-                            ? "✓"
-                            : order.status === "PENDING"
-                              ? "⏳"
-                              : "✕"}
-                        </strong>
+                        <strong>{order.status === "CONFIRMED" ? "✓" : order.status === "PENDING" ? "⏳" : "✕"}</strong>
                         <span>{order.total.toFixed(3)} DT</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="order-admin-card__side">
-                  <strong>
-                    {serviceDict.revenue(totalConfirmed + totalPending)}
-                  </strong>
+                  <strong>{serviceDict.revenue(totalConfirmed + totalPending)}</strong>
                   <div className="admin-form__actions">
                     {entry.session.id.startsWith("table:") ? null : (
                       <button
@@ -562,9 +492,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                         onClick={() => void handleCloseTable(entry.session.id)}
                         disabled={closeTableBusy === entry.session.id}
                       >
-                        {closeTableBusy === entry.session.id
-                          ? serviceDict.tableClosed
-                          : "Clôturer la table"}
+                        {closeTableBusy === entry.session.id ? serviceDict.tableClosed : "Clôturer la table"}
                       </button>
                     )}
                   </div>
@@ -599,9 +527,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                 className="admin-field__input"
                 value={paymentFilter}
                 aria-label="Filtrer par paiement"
-                onChange={(e) =>
-                  setPaymentFilter(e.target.value as "ALL" | "PAID" | "UNPAID")
-                }
+                onChange={(e) => setPaymentFilter(e.target.value as "ALL" | "PAID" | "UNPAID")}
               >
                 <option value="ALL">Tous</option>
                 <option value="PAID">Payées</option>
@@ -635,14 +561,8 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                     <span>{d.tableNumber}</span>
                     {order.tableNumber}
                   </strong>
-                  <span
-                    className={`admin-status admin-status--${order.status.toLowerCase()}`}
-                  >
-                    {order.status === "PENDING"
-                      ? d.pending
-                      : order.status === "CONFIRMED"
-                        ? d.confirmed
-                        : d.rejected}
+                  <span className={`admin-status admin-status--${order.status.toLowerCase()}`}>
+                    {order.status === "PENDING" ? d.pending : order.status === "CONFIRMED" ? d.confirmed : d.rejected}
                   </span>
                 </div>
                 <div className="admin-payment-state">
@@ -691,8 +611,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       {d.reject}
                     </button>
                   </div>
-                ) : order.status === "CONFIRMED" &&
-                  order.paymentStatus === "UNPAID" ? (
+                ) : order.status === "CONFIRMED" && order.paymentStatus === "UNPAID" ? (
                   <button
                     className="admin-btn admin-btn--primary"
                     type="button"
@@ -713,17 +632,27 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             <h2 className="admin-head__title">{serviceDict.history}</h2>
           </div>
           <div className="service-history-toggle" role="tablist" aria-label="Période historique">
-            <button type="button" className={historyRange === "today" ? "is-active" : ""} onClick={() => setHistoryRange("today")}>Aujourd&apos;hui</button>
-            <button type="button" className={historyRange === "all" ? "is-active" : ""} onClick={() => setHistoryRange("all")}>Tous les services</button>
+            <button
+              type="button"
+              className={historyRange === "today" ? "is-active" : ""}
+              onClick={() => setHistoryRange("today")}
+            >
+              Aujourd&apos;hui
+            </button>
+            <button
+              type="button"
+              className={historyRange === "all" ? "is-active" : ""}
+              onClick={() => setHistoryRange("all")}
+            >
+              Tous les services
+            </button>
           </div>
         </div>
       ) : null}
       {section === "service" && serviceView === "history" ? (
         historicalServices.length === 0 ? (
           <p className="sheet-state__text">
-            {historyRange === "today"
-              ? "Aucun service précédent aujourd'hui."
-              : "Aucun historique."}
+            {historyRange === "today" ? "Aucun service précédent aujourd'hui." : "Aucun historique."}
           </p>
         ) : (
           historicalServices.map((shiftItem) => (
@@ -734,15 +663,11 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   <span>
                     {serviceDateTime(shiftItem.openedAt)}
                     {" → "}
-                    {shiftItem.closedAt
-                      ? serviceDateTime(shiftItem.closedAt, false)
-                      : serviceDict.statusOpen}
+                    {shiftItem.closedAt ? serviceDateTime(shiftItem.closedAt, false) : serviceDict.statusOpen}
                   </span>
                 </div>
                 <span className="admin-status admin-status--closed">
-                  {shiftItem.status === "OPEN"
-                    ? serviceDict.statusOpen
-                    : serviceDict.statusClosed}
+                  {shiftItem.status === "OPEN" ? serviceDict.statusOpen : serviceDict.statusClosed}
                 </span>
               </div>
               <div className="service-history-card__revenue">
@@ -808,7 +733,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                 ? "Cette table contient des commandes en attente. Refusez-les ou confirmez-les, puis enregistrez leur paiement avant de la clôturer."
                 : tableUnpaidOrders.length > 0
                   ? "Cette table contient des commandes non payées. Finalisez les paiements avant de la clôturer."
-                : "Toutes les commandes confirmées de cette table sont payées."}
+                  : "Toutes les commandes confirmées de cette table sont payées."}
             </p>
             <div className="admin-table-payment-summary">
               <span>
@@ -857,9 +782,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       <span>{order.total.toFixed(3)} DT</span>
                     </div>
                     {order.paymentStatus === "PAID" ? (
-                      <span className="admin-payment-state admin-payment-state--paid">
-                        ✓ Payée
-                      </span>
+                      <span className="admin-payment-state admin-payment-state--paid">✓ Payée</span>
                     ) : (
                       <button
                         type="button"
@@ -898,9 +821,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   }}
                   disabled={closeTableBusy === tablePayment.sessionId}
                 >
-                  {closeTableBusy === tablePayment.sessionId
-                    ? "Clôture…"
-                    : "Clôturer la table"}
+                  {closeTableBusy === tablePayment.sessionId ? "Clôture…" : "Clôturer la table"}
                 </button>
               ) : null}
             </div>
@@ -927,11 +848,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           aria-labelledby="no-active-service-title"
           aria-describedby="no-active-service-description"
         >
-          <div
-            className="admin-dialog__scrim"
-            onClick={() => setNoActiveServiceOrder(null)}
-            aria-hidden="true"
-          />
+          <div className="admin-dialog__scrim" onClick={() => setNoActiveServiceOrder(null)} aria-hidden="true" />
           <div className="admin-dialog__card">
             <h3 id="no-active-service-title" className="admin-dialog__title">
               Aucun service actif
@@ -997,8 +914,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       <div>
                         <strong>Table {table.tableNumber}</strong>
                         <span>
-                          {table.orders} commande{table.orders > 1 ? "s" : ""} ·{" "}
-                          {table.revenue.toFixed(3)} DT
+                          {table.orders} commande{table.orders > 1 ? "s" : ""} · {table.revenue.toFixed(3)} DT
                         </span>
                       </div>
                       <button
@@ -1011,9 +927,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                         }}
                         disabled={closeTableBusy !== null}
                       >
-                        {closeTableBusy === table.id
-                          ? "Vérification…"
-                          : "Clôturer la table"}
+                        {closeTableBusy === table.id ? "Vérification…" : "Clôturer la table"}
                       </button>
                     </div>
                   ))}

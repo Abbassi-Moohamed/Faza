@@ -86,9 +86,7 @@ export function BrandIntro({
             {hasCounts ? (
               <p className="brand-intro__menu-meta" aria-label={dict.explore.menuSummaryAriaLabel}>
                 {categoriesCount != null ? (
-                  <span className="brand-intro__menu-meta-item">
-                    {dict.explore.categoriesLabel(categoriesCount)}
-                  </span>
+                  <span className="brand-intro__menu-meta-item">{dict.explore.categoriesLabel(categoriesCount)}</span>
                 ) : null}
                 {categoriesCount != null && itemsCount != null ? (
                   <span className="brand-intro__menu-dot" aria-hidden="true" />

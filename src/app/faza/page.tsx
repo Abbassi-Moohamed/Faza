@@ -13,11 +13,7 @@ export default function FazaLandingPage() {
   return (
     <div id="top">
       <main id="main">
-        <BrandIntro
-          name={siteConfig.name}
-          eyebrow={dict.landing.eyebrow}
-          description={dict.landing.message}
-        />
+        <BrandIntro name={siteConfig.name} eyebrow={dict.landing.eyebrow} description={dict.landing.message} />
       </main>
     </div>
   );

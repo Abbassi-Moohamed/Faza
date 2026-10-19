@@ -4,16 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { getDictionary } from "@/i18n";
-import {
-  actionError,
-  isSessionFailure,
-} from "@/lib/admin-errors";
-import {
-  clearSession,
-  readSession,
-  writeSession,
-  type AdminSession,
-} from "@/lib/admin-session";
+import { actionError, isSessionFailure } from "@/lib/admin-errors";
+import { clearSession, readSession, writeSession, type AdminSession } from "@/lib/admin-session";
 import {
   createCoffee,
   deleteCoffee,
@@ -230,7 +222,12 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
 
   const formInitial =
     form?.mode === "edit"
-      ? { name: form.coffee.name, logo: form.coffee.logo, cover: form.coffee.cover ?? undefined, slug: form.coffee.slug }
+      ? {
+          name: form.coffee.name,
+          logo: form.coffee.logo,
+          cover: form.coffee.cover ?? undefined,
+          slug: form.coffee.slug,
+        }
       : undefined;
 
   return (
@@ -249,7 +246,12 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
       }}
     >
       {initialView === "insights" ? (
-        <InsightsDashboard dict={dict} fetchAnalytics={fetchAnalytics} onSessionExpired={handleExpired} backHref="/faza/admin" />
+        <InsightsDashboard
+          dict={dict}
+          fetchAnalytics={fetchAnalytics}
+          onSessionExpired={handleExpired}
+          backHref="/faza/admin"
+        />
       ) : null}
       {initialView !== "insights" && notice ? (
         <p className="admin-toast" role="status">
@@ -257,22 +259,24 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
         </p>
       ) : null}
 
-      {initialView !== "insights" ? <div className="admin-head">
-        <div className="admin-head__text">
-          <h1 className="admin-head__title">{d.app.coffeesTitle}</h1>
-          <p className="admin-head__hint">{d.app.coffeesHint}</p>
+      {initialView !== "insights" ? (
+        <div className="admin-head">
+          <div className="admin-head__text">
+            <h1 className="admin-head__title">{d.app.coffeesTitle}</h1>
+            <p className="admin-head__hint">{d.app.coffeesHint}</p>
+          </div>
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            onClick={() => {
+              setFormError(null);
+              setForm({ mode: "create" });
+            }}
+          >
+            {d.app.createCoffee}
+          </button>
         </div>
-        <button
-          type="button"
-          className="admin-btn admin-btn--primary"
-          onClick={() => {
-            setFormError(null);
-            setForm({ mode: "create" });
-          }}
-        >
-          {d.app.createCoffee}
-        </button>
-      </div> : null}
+      ) : null}
 
       {initialView !== "insights" && form ? (
         <CoffeeForm
@@ -291,19 +295,21 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
         />
       ) : null}
 
-      {initialView !== "insights" ? <CoffeeList
-        dict={dict}
-        coffees={coffees ?? []}
-        loading={listStatus === "idle"}
-        error={listStatus === "error" ? listError : null}
-        onRetry={loadCoffees}
-        onEdit={(coffee) => {
-          setFormError(null);
-          setForm({ mode: "edit", coffee });
-        }}
-        onResetPin={(coffee) => setResetTarget(coffee)}
-        onDelete={(coffee) => setDeleteTarget(coffee)}
-      /> : null}
+      {initialView !== "insights" ? (
+        <CoffeeList
+          dict={dict}
+          coffees={coffees ?? []}
+          loading={listStatus === "idle"}
+          error={listStatus === "error" ? listError : null}
+          onRetry={loadCoffees}
+          onEdit={(coffee) => {
+            setFormError(null);
+            setForm({ mode: "edit", coffee });
+          }}
+          onResetPin={(coffee) => setResetTarget(coffee)}
+          onDelete={(coffee) => setDeleteTarget(coffee)}
+        />
+      ) : null}
 
       {initialView !== "insights" && deleteTarget ? (
         <AdminConfirmDialog

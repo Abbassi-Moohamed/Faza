@@ -70,9 +70,7 @@ export default function RootLayout({
           <a className="skip-link sr-only" href="#main">
             {dict.a11y.skipLink}
           </a>
-          <Header
-            viewOrder={dict.order.viewOrder}
-          />
+          <Header viewOrder={dict.order.viewOrder} />
         </PublicChrome>
         {children}
         <PublicChrome>

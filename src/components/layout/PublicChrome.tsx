@@ -7,11 +7,7 @@ import { usePathname } from "next/navigation";
  * customer-facing routes. Backoffice routes match `/…/admin` and render their
  * own functional chrome instead, so the public header/footer are skipped.
  */
-export function PublicChrome({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function PublicChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.includes("/admin");
 

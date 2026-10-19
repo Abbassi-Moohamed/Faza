@@ -40,38 +40,40 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   return (
     <div className="admin">
-      {!hideHeader ? <header className="admin-bar">
-        <div className="admin-bar__inner">
-          <div className="admin-bar__brand">
-            {logo ? (
-              // The coffee logo identifies the active backoffice context.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="admin-bar__logo" src={logo} alt="" />
-            ) : (
-              <span className="brand-mark" aria-hidden="true">
-                {siteConfig.name.charAt(0)}
+      {!hideHeader ? (
+        <header className="admin-bar">
+          <div className="admin-bar__inner">
+            <div className="admin-bar__brand">
+              {logo ? (
+                // The coffee logo identifies the active backoffice context.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="admin-bar__logo" src={logo} alt="" />
+              ) : (
+                <span className="brand-mark" aria-hidden="true">
+                  {siteConfig.name.charAt(0)}
+                </span>
+              )}
+              <span className="admin-bar__text">
+                <span className="admin-bar__title">{title}</span>
+                {subtitle ? <span className="admin-bar__subtitle">{subtitle}</span> : null}
               </span>
-            )}
-            <span className="admin-bar__text">
-              <span className="admin-bar__title">{title}</span>
-              {subtitle ? <span className="admin-bar__subtitle">{subtitle}</span> : null}
-            </span>
+            </div>
+            <div className="admin-bar__actions">
+              {publicMenuHref ? (
+                <Link className="admin-bar__link" href={publicMenuHref}>
+                  {dict.admin.chrome.viewPublicMenu}
+                </Link>
+              ) : null}
+              {!headerActions ? (
+                <button type="button" className="admin-bar__link admin-bar__link--logout" onClick={onLogout}>
+                  {dict.admin.chrome.logout}
+                </button>
+              ) : null}
+              {headerActions}
+            </div>
           </div>
-          <div className="admin-bar__actions">
-            {publicMenuHref ? (
-              <Link className="admin-bar__link" href={publicMenuHref}>
-                {dict.admin.chrome.viewPublicMenu}
-              </Link>
-            ) : null}
-            {!headerActions ? (
-              <button type="button" className="admin-bar__link admin-bar__link--logout" onClick={onLogout}>
-                {dict.admin.chrome.logout}
-              </button>
-            ) : null}
-            {headerActions}
-          </div>
-        </div>
-      </header> : null}
+        </header>
+      ) : null}
       <main id="main" className="admin-main">
         <div className="admin-container">{children}</div>
       </main>

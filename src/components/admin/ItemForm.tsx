@@ -19,7 +19,14 @@ interface ItemFormProps {
   dict: Dictionary;
   title: string;
   /** Existing values when editing (price is the backend decimal, e.g. `4.5`). */
-  initial?: { name: string; description: string | null; price: number; promotion: number | null; isAvailable: boolean; image: string | null };
+  initial?: {
+    name: string;
+    description: string | null;
+    price: number;
+    promotion: number | null;
+    isAvailable: boolean;
+    image: string | null;
+  };
   busy: boolean;
   /** Server-side error (already translated). */
   error?: string | null;
@@ -41,9 +48,12 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
   const [preview, setPreview] = useState(initial?.image ?? "");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => () => {
-    if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
-  }, [preview]);
+  useEffect(
+    () => () => {
+      if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+    },
+    [preview],
+  );
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -58,7 +68,10 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
       setFieldError(t.priceInvalid);
       return;
     }
-    if (promotion.trim().length > 0 && (!isValidPrice(promotion) || Number(promotion) <= 0 || Number(promotion) >= Number(price))) {
+    if (
+      promotion.trim().length > 0 &&
+      (!isValidPrice(promotion) || Number(promotion) <= 0 || Number(promotion) >= Number(price))
+    ) {
       setFieldError(t.promotionInvalid);
       return;
     }
@@ -87,7 +100,10 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
   };
 
   return (
-    <section className={cn("admin-form", (busy || submitting) && "admin-form--disabled")} aria-busy={busy || submitting}>
+    <section
+      className={cn("admin-form", (busy || submitting) && "admin-form--disabled")}
+      aria-busy={busy || submitting}
+    >
       <div className="admin-form__head">
         <h3 className="admin-form__title">{title}</h3>
       </div>
@@ -106,13 +122,28 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
 
       <label className="admin-field">
         <span className="admin-field__label">{t.promotion}</span>
-        <input className="admin-field__input" type="number" inputMode="decimal" min="0.001" step="0.001" value={promotion} placeholder={t.promotionPlaceholder} disabled={busy || submitting} onChange={(event) => setPromotion(event.target.value)} />
+        <input
+          className="admin-field__input"
+          type="number"
+          inputMode="decimal"
+          min="0.001"
+          step="0.001"
+          value={promotion}
+          placeholder={t.promotionPlaceholder}
+          disabled={busy || submitting}
+          onChange={(event) => setPromotion(event.target.value)}
+        />
         <span className="admin-field__hint">{t.promotionHint}</span>
       </label>
 
       <label className="admin-field admin-field--checkbox">
         <span className="admin-field__label">{t.availability}</span>
-        <input type="checkbox" checked={isAvailable} disabled={busy || submitting} onChange={(event) => setIsAvailable(event.target.checked)} />
+        <input
+          type="checkbox"
+          checked={isAvailable}
+          disabled={busy || submitting}
+          onChange={(event) => setIsAvailable(event.target.checked)}
+        />
         <span>{isAvailable ? t.available : t.unavailable}</span>
       </label>
 
@@ -190,7 +221,12 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
         <button type="button" className="admin-btn admin-btn--ghost" disabled={busy || submitting} onClick={onCancel}>
           {dict.admin.coffeeForm.cancel}
         </button>
-        <button type="button" className="admin-btn admin-btn--primary" disabled={busy || submitting} onClick={() => void handleSubmit()}>
+        <button
+          type="button"
+          className="admin-btn admin-btn--primary"
+          disabled={busy || submitting}
+          onClick={() => void handleSubmit()}
+        >
           {busy || submitting ? dict.admin.coffeeForm.saving : dict.admin.coffeeForm.save}
         </button>
       </div>

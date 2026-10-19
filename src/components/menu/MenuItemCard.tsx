@@ -23,7 +23,11 @@ export function MenuItemCard({ item, currency, locale, delay = 0 }: MenuItemCard
       style={{ "--delay": `${delay}ms` } as CSSProperties}
       aria-label={!item.isAvailable ? `${item.name}, ${dict.menuItem.unavailable}` : undefined}
     >
-      {hasPromotion ? <span className="item-card__promotion">{item.isAvailable ? dict.menuItem.promotion : dict.menuItem.unavailable}</span> : null}
+      {hasPromotion ? (
+        <span className="item-card__promotion">
+          {item.isAvailable ? dict.menuItem.promotion : dict.menuItem.unavailable}
+        </span>
+      ) : null}
       <div className="item-card__art">
         <ItemArt item={item} className="item-card__art-img" sizes="(min-width: 42rem) 19rem, 92vw" />
         {!item.isAvailable ? (
@@ -37,7 +41,12 @@ export function MenuItemCard({ item, currency, locale, delay = 0 }: MenuItemCard
           <h3 className="item-card__name">{item.name}</h3>
           {item.promotion !== null && item.isAvailable ? (
             <span className="item-card__prices">
-              <PriceBadge className="item-card__price item-card__price--old" price={item.price} currency={currency} locale={locale} />
+              <PriceBadge
+                className="item-card__price item-card__price--old"
+                price={item.price}
+                currency={currency}
+                locale={locale}
+              />
               <PriceBadge className="item-card__price" price={item.promotion} currency={currency} locale={locale} />
             </span>
           ) : (

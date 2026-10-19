@@ -57,10 +57,13 @@ export function CoffeeForm({
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState(initial?.cover ?? "");
 
-  useEffect(() => () => {
-    if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
-    if (coverPreview.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
-  }, [preview, coverPreview]);
+  useEffect(
+    () => () => {
+      if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+      if (coverPreview.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+    },
+    [preview, coverPreview],
+  );
 
   const handleSubmit = async () => {
     if (submitting) return;
@@ -104,7 +107,10 @@ export function CoffeeForm({
   };
 
   return (
-    <section className={cn("admin-form", (busy || submitting) && "admin-form--disabled")} aria-busy={busy || submitting}>
+    <section
+      className={cn("admin-form", (busy || submitting) && "admin-form--disabled")}
+      aria-busy={busy || submitting}
+    >
       <div className="admin-form__head">
         <h3 className="admin-form__title">{title}</h3>
       </div>
@@ -217,7 +223,12 @@ export function CoffeeForm({
             {t.cancel}
           </button>
         )}
-        <button type="button" className="admin-btn admin-btn--primary" disabled={busy || submitting} onClick={() => void handleSubmit()}>
+        <button
+          type="button"
+          className="admin-btn admin-btn--primary"
+          disabled={busy || submitting}
+          onClick={() => void handleSubmit()}
+        >
           {busy || submitting ? t.saving : t.save}
         </button>
       </div>

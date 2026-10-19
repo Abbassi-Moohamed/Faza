@@ -16,10 +16,7 @@ export function Header({ viewOrder }: HeaderProps) {
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const pathParts = pathname.split("/").filter(Boolean);
   const isAdminPage = pathParts.includes("admin");
-  const coffeeSlug =
-    pathParts[0] === "faza" && pathParts.length >= 2 && !isAdminPage
-      ? pathParts[1]
-      : null;
+  const coffeeSlug = pathParts[0] === "faza" && pathParts.length >= 2 && !isAdminPage ? pathParts[1] : null;
 
   useEffect(() => {
     if (!coffeeSlug) return;
@@ -46,11 +43,10 @@ export function Header({ viewOrder }: HeaderProps) {
         </a>
         <span className="site-header__spacer" aria-hidden="true" />
         {activeOrderId && coffeeSlug ? (
-          <Link
-            className="header-order-link"
-            href={`/faza/${coffeeSlug}/order/${activeOrderId}`}
-          >
-            <span className="header-order-link__icon" aria-hidden="true">📋</span>
+          <Link className="header-order-link" href={`/faza/${coffeeSlug}/order/${activeOrderId}`}>
+            <span className="header-order-link__icon" aria-hidden="true">
+              📋
+            </span>
             {viewOrder}
           </Link>
         ) : null}

@@ -26,11 +26,7 @@ export function MenuScene({ name, logo, cover, categories, coffeeSlug }: MenuSce
         categoriesCount={categories.length}
         onReset={() => setResetSignal((value) => value + 1)}
       />
-      <CategoryBubbles
-        key={resetSignal}
-        coffeeSlug={coffeeSlug}
-        categories={categories}
-      />
+      <CategoryBubbles key={resetSignal} coffeeSlug={coffeeSlug} categories={categories} />
     </>
   );
 }

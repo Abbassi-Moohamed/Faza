@@ -69,20 +69,20 @@ flowchart TD
 
 ## Technology stack
 
-| Area | Actual implementation |
-| --- | --- |
-| Framework | Next.js `16.3.5`, App Router, React Server Components, Turbopack in development |
-| UI runtime | React `19.3.0` and `react-dom` `19.3.0` |
-| Language | TypeScript `^5.8.0`, strict mode |
-| Styling | Plain global CSS in `src/app/globals.css`; no Tailwind or CSS framework |
-| Fonts | `next/font/google` with Fraunces for display text and Inter for body text |
-| Data fetching | Native `fetch`, wrapped by `src/lib/api.ts`; no React Query/SWR |
-| Forms | Controlled React components with local validation; no form library |
-| Validation | Local URL and price validators in `src/lib/validators.ts`, with backend validation remaining authoritative |
-| UI component library | None; components are local to `src/components` |
-| Images | `next/image` with `unoptimized: true`; arbitrary remote URLs are accepted |
-| Authentication | Short-lived backend bearer token stored in browser `sessionStorage` |
-| Localization | Typed French dictionary in `src/i18n/fr.ts`; locale `fr-TN` |
+| Area                 | Actual implementation                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Framework            | Next.js `16.3.5`, App Router, React Server Components, Turbopack in development                            |
+| UI runtime           | React `19.3.0` and `react-dom` `19.3.0`                                                                    |
+| Language             | TypeScript `^5.8.0`, strict mode                                                                           |
+| Styling              | Plain global CSS in `src/app/globals.css`; no Tailwind or CSS framework                                    |
+| Fonts                | `next/font/google` with Fraunces for display text and Inter for body text                                  |
+| Data fetching        | Native `fetch`, wrapped by `src/lib/api.ts`; no React Query/SWR                                            |
+| Forms                | Controlled React components with local validation; no form library                                         |
+| Validation           | Local URL and price validators in `src/lib/validators.ts`, with backend validation remaining authoritative |
+| UI component library | None; components are local to `src/components`                                                             |
+| Images               | `next/image` with `unoptimized: true`; arbitrary remote URLs are accepted                                  |
+| Authentication       | Short-lived backend bearer token stored in browser `sessionStorage`                                        |
+| Localization         | Typed French dictionary in `src/i18n/fr.ts`; locale `fr-TN`                                                |
 
 The only runtime dependencies are Next.js, React, and React DOM. There is no
 client state-management package, API client package, CSS framework, or schema
@@ -192,18 +192,18 @@ and payment rate. Closing a shift with confirmed unpaid orders is allowed but
 shows a warning; historical order totals and item snapshots are never
 recalculated or overwritten.
 
-| Route | Implementation | Data/access |
-| --- | --- | --- |
-| `/` | `src/app/page.tsx` | Permanent redirect to `/faza` |
-| `/faza` | `src/app/faza/page.tsx` | Public brand landing; no backend data |
-| `/:coffeeSlug` | `src/app/[coffeeSlug]/page.tsx` | Permanent redirect to `/faza/:coffeeSlug` |
-| `/faza/:slug` | `src/app/faza/[slug]/page.tsx` | Server-fetches a coffee and its category summaries by slug |
-| `/faza/:slug/:categName` | `src/app/faza/[slug]/[categName]/page.tsx` | Resolves category within that coffee, then fetches category items |
-| `/faza/admin` | `src/app/faza/admin/page.tsx` | Client-driven application-admin PIN gate and console |
-| `/faza/admin/insights` | `src/app/faza/admin/insights/page.tsx` | Authenticated application analytics dashboard |
-| `/faza/:slug/admin` | `src/app/faza/[slug]/admin/page.tsx` | Client-driven coffee-admin PIN gate and console |
-| `/faza/:slug/admin/insights` | `src/app/faza/[slug]/admin/insights/page.tsx` | Authenticated coffee analytics dashboard |
-| `/:coffeeSlug/admin` | `src/app/[coffeeSlug]/admin/page.tsx` | Permanent redirect to canonical coffee-admin route |
+| Route                        | Implementation                                | Data/access                                                       |
+| ---------------------------- | --------------------------------------------- | ----------------------------------------------------------------- |
+| `/`                          | `src/app/page.tsx`                            | Permanent redirect to `/faza`                                     |
+| `/faza`                      | `src/app/faza/page.tsx`                       | Public brand landing; no backend data                             |
+| `/:coffeeSlug`               | `src/app/[coffeeSlug]/page.tsx`               | Permanent redirect to `/faza/:coffeeSlug`                         |
+| `/faza/:slug`                | `src/app/faza/[slug]/page.tsx`                | Server-fetches a coffee and its category summaries by slug        |
+| `/faza/:slug/:categName`     | `src/app/faza/[slug]/[categName]/page.tsx`    | Resolves category within that coffee, then fetches category items |
+| `/faza/admin`                | `src/app/faza/admin/page.tsx`                 | Client-driven application-admin PIN gate and console              |
+| `/faza/admin/insights`       | `src/app/faza/admin/insights/page.tsx`        | Authenticated application analytics dashboard                     |
+| `/faza/:slug/admin`          | `src/app/faza/[slug]/admin/page.tsx`          | Client-driven coffee-admin PIN gate and console                   |
+| `/faza/:slug/admin/insights` | `src/app/faza/[slug]/admin/insights/page.tsx` | Authenticated coffee analytics dashboard                          |
+| `/:coffeeSlug/admin`         | `src/app/[coffeeSlug]/admin/page.tsx`         | Permanent redirect to canonical coffee-admin route                |
 
 The category URL uses `slugify(category.name)`. It is not a backend category
 ID in the public URL. The page first loads the coffee, finds a category whose
@@ -272,14 +272,14 @@ month, and custom ranges without adding a chart dependency.
 
 ### Backend/API DTOs
 
-| Type | Fields |
-| --- | --- |
-| `CoffeeDto` | `id`, `name`, `logo`, `cover: string \| null`, `slug`, `categories: CategoryDto[]` |
-| `CategoryDto` | `id`, `name`, `image: string \| null` |
-| `ItemDto` | `id`, `name`, `description: string \| null`, `price: number`, `image: string \| null` |
-| `AdminCoffeeDto` | `id`, `name`, `logo`, `cover: string \| null`, `slug`, `categoryCount`, `createdAt`, `updatedAt` |
-| `AdminCategoryDto` | `id`, `name`, `image: string \| null`, `createdAt`, `updatedAt` |
-| `AdminItemDto` | `id`, `name`, `description`, `price`, `image`, `itemCategoryId`, timestamps |
+| Type               | Fields                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| `CoffeeDto`        | `id`, `name`, `logo`, `cover: string \| null`, `slug`, `categories: CategoryDto[]`               |
+| `CategoryDto`      | `id`, `name`, `image: string \| null`                                                            |
+| `ItemDto`          | `id`, `name`, `description: string \| null`, `price: number`, `image: string \| null`            |
+| `AdminCoffeeDto`   | `id`, `name`, `logo`, `cover: string \| null`, `slug`, `categoryCount`, `createdAt`, `updatedAt` |
+| `AdminCategoryDto` | `id`, `name`, `image: string \| null`, `createdAt`, `updatedAt`                                  |
+| `AdminItemDto`     | `id`, `name`, `description`, `price`, `image`, `itemCategoryId`, timestamps                      |
 
 All successful backend responses are expected to use
 `{ success: true, data }`. Errors use `{ success: false, message, details? }`.
@@ -444,36 +444,36 @@ with the HTTP status attached.
 
 ### Public endpoints
 
-| Method | Endpoint | Used by |
-| --- | --- | --- |
-| `GET` | `/api/v1/coffees/:coffeeSlug` | Public coffee and category pages |
-| `GET` | `/api/v1/categories/:categoryId/items` | Public category page |
+| Method | Endpoint                               | Used by                          |
+| ------ | -------------------------------------- | -------------------------------- |
+| `GET`  | `/api/v1/coffees/:coffeeSlug`          | Public coffee and category pages |
+| `GET`  | `/api/v1/categories/:categoryId/items` | Public category page             |
 
 ### Authentication endpoints
 
-| Method | Endpoint | Result |
-| --- | --- | --- |
-| `POST` | `/api/v1/admin/auth/app` | App-admin bearer session |
+| Method | Endpoint                                | Result                      |
+| ------ | --------------------------------------- | --------------------------- |
+| `POST` | `/api/v1/admin/auth/app`                | App-admin bearer session    |
 | `POST` | `/api/v1/admin/auth/coffee/:coffeeSlug` | Coffee-admin bearer session |
 
 ### Application-admin endpoints
 
 All endpoints below require an `Authorization: Bearer <token>` header.
 
-| Method | Endpoint | Operation |
-| --- | --- | --- |
-| `GET` | `/api/v1/admin/coffees` | List coffees |
-| `POST` | `/api/v1/admin/coffees` | Create coffee |
-| `PATCH` | `/api/v1/admin/coffees/:coffeeId` | Edit coffee |
-| `DELETE` | `/api/v1/admin/coffees/:coffeeId` | Delete coffee and cascade its categories/items |
-| `PATCH` | `/api/v1/admin/coffees/:coffeeId/pin` | Reset a coffee PIN |
+| Method   | Endpoint                              | Operation                                      |
+| -------- | ------------------------------------- | ---------------------------------------------- |
+| `GET`    | `/api/v1/admin/coffees`               | List coffees                                   |
+| `POST`   | `/api/v1/admin/coffees`               | Create coffee                                  |
+| `PATCH`  | `/api/v1/admin/coffees/:coffeeId`     | Edit coffee                                    |
+| `DELETE` | `/api/v1/admin/coffees/:coffeeId`     | Delete coffee and cascade its categories/items |
+| `PATCH`  | `/api/v1/admin/coffees/:coffeeId/pin` | Reset a coffee PIN                             |
 
 ### Image uploads
 
-| Method | Endpoint | Operation |
-| --- | --- | --- |
-| `POST` | `/api/v1/admin/images` | Upload one multipart image using the `file` field |
-| `DELETE` | `/api/v1/admin/images/:imageId` | Delete an uploaded image |
+| Method   | Endpoint                        | Operation                                         |
+| -------- | ------------------------------- | ------------------------------------------------- |
+| `POST`   | `/api/v1/admin/images`          | Upload one multipart image using the `file` field |
+| `DELETE` | `/api/v1/admin/images/:imageId` | Delete an uploaded image                          |
 
 The upload request uses the authenticated admin bearer token. The frontend
 selects the file and sends it to Express; only the backend talks to Cloudflare
@@ -486,19 +486,19 @@ All endpoints below require the coffee-admin bearer token. The backend derives
 the owned coffee from the token; the frontend does not send an arbitrary
 coffee owner ID.
 
-| Method | Endpoint | Operation |
-| --- | --- | --- |
-| `GET` | `/api/v1/admin/my-coffee` | Load the authenticated coffee |
-| `PATCH` | `/api/v1/admin/my-coffee` | Edit coffee name, logo, cover, or slug |
-| `PATCH` | `/api/v1/admin/my-coffee/pin` | Change current coffee PIN |
-| `GET` | `/api/v1/admin/my-coffee/categories` | List owned categories |
-| `POST` | `/api/v1/admin/my-coffee/categories` | Create category |
-| `PATCH` | `/api/v1/admin/my-coffee/categories/:categoryId` | Edit category |
-| `DELETE` | `/api/v1/admin/my-coffee/categories/:categoryId` | Delete category and cascade items |
-| `GET` | `/api/v1/admin/my-coffee/categories/:categoryId/items` | List category items |
-| `POST` | `/api/v1/admin/my-coffee/categories/:categoryId/items` | Create item |
-| `PATCH` | `/api/v1/admin/my-coffee/items/:itemId` | Edit item, promotion, or availability |
-| `DELETE` | `/api/v1/admin/my-coffee/items/:itemId` | Delete item |
+| Method   | Endpoint                                               | Operation                              |
+| -------- | ------------------------------------------------------ | -------------------------------------- |
+| `GET`    | `/api/v1/admin/my-coffee`                              | Load the authenticated coffee          |
+| `PATCH`  | `/api/v1/admin/my-coffee`                              | Edit coffee name, logo, cover, or slug |
+| `PATCH`  | `/api/v1/admin/my-coffee/pin`                          | Change current coffee PIN              |
+| `GET`    | `/api/v1/admin/my-coffee/categories`                   | List owned categories                  |
+| `POST`   | `/api/v1/admin/my-coffee/categories`                   | Create category                        |
+| `PATCH`  | `/api/v1/admin/my-coffee/categories/:categoryId`       | Edit category                          |
+| `DELETE` | `/api/v1/admin/my-coffee/categories/:categoryId`       | Delete category and cascade items      |
+| `GET`    | `/api/v1/admin/my-coffee/categories/:categoryId/items` | List category items                    |
+| `POST`   | `/api/v1/admin/my-coffee/categories/:categoryId/items` | Create item                            |
+| `PATCH`  | `/api/v1/admin/my-coffee/items/:itemId`                | Edit item, promotion, or availability  |
+| `DELETE` | `/api/v1/admin/my-coffee/items/:itemId`                | Delete item                            |
 
 ## Category bubbles
 
@@ -617,10 +617,10 @@ a security boundary.
 
 ## Permissions
 
-| Role | Can do | Cannot do |
-| --- | --- | --- |
-| `APP_ADMIN` | List, create, edit, delete all coffees; reset coffee PINs | Use coffee-admin-only token-scoped operations as a coffee owner |
-| `COFFEE_ADMIN` | Edit its coffee; manage its categories/items; change its PIN; open its public menu | List or manage other coffees |
+| Role           | Can do                                                                             | Cannot do                                                       |
+| -------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `APP_ADMIN`    | List, create, edit, delete all coffees; reset coffee PINs                          | Use coffee-admin-only token-scoped operations as a coffee owner |
+| `COFFEE_ADMIN` | Edit its coffee; manage its categories/items; change its PIN; open its public menu | List or manage other coffees                                    |
 
 Frontend visibility and route checks improve usability, but every protected
 request still carries the bearer token and must be authorized by the backend.
@@ -661,14 +661,14 @@ server response after the mutation completes.
 
 There is no global state library.
 
-| State | Location |
-| --- | --- |
-| Public coffee/category/item data | Server component request lifecycle |
-| Selected category in coffee admin | `CoffeeAdmin` local React state |
-| Admin token/role | `CoffeeAdmin` or `AppAdmin` state, restored from `sessionStorage` after hydration |
-| Loading/error states | Local component state per resource |
-| Create/edit/delete dialog state | Local admin component state |
-| Transient success notices | Local state, automatically cleared after approximately 4.5 seconds |
+| State                             | Location                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| Public coffee/category/item data  | Server component request lifecycle                                                |
+| Selected category in coffee admin | `CoffeeAdmin` local React state                                                   |
+| Admin token/role                  | `CoffeeAdmin` or `AppAdmin` state, restored from `sessionStorage` after hydration |
+| Loading/error states              | Local component state per resource                                                |
+| Create/edit/delete dialog state   | Local admin component state                                                       |
+| Transient success notices         | Local state, automatically cleared after approximately 4.5 seconds                |
 
 Admin lists use explicit `idle`, `loading`, `ready`, and `error`-style states
 and provide retry actions. Effects guard against updating state after a
@@ -676,18 +676,18 @@ request has been cancelled.
 
 ## Error and empty states
 
-| Situation | Frontend behavior |
-| --- | --- |
-| Coffee not found or invalid slug | Branded public 404 |
-| Category not found for the coffee | Category-specific 404 |
-| Backend failure loading a public page | Branded unavailable page with retry |
-| Empty coffee categories | â€œThis coffee has not published its menuâ€ state |
-| Empty category items | â€œNothing in this categoryâ€ state |
-| Invalid PIN | Friendly translated PIN error; input is cleared |
-| Admin `401` | Session cleared; user returns to PIN gate |
-| Admin `403` | Session cleared for re-authentication, or translated forbidden action error |
-| Admin `404`/`409`/`400` | Translated not-found, conflict, or validation message |
-| Network failure | Translated â€œcannot reach serverâ€ message |
+| Situation                             | Frontend behavior                                                           |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| Coffee not found or invalid slug      | Branded public 404                                                          |
+| Category not found for the coffee     | Category-specific 404                                                       |
+| Backend failure loading a public page | Branded unavailable page with retry                                         |
+| Empty coffee categories               | â€œThis coffee has not published its menuâ€ state                           |
+| Empty category items                  | â€œNothing in this categoryâ€ state                                         |
+| Invalid PIN                           | Friendly translated PIN error; input is cleared                             |
+| Admin `401`                           | Session cleared; user returns to PIN gate                                   |
+| Admin `403`                           | Session cleared for re-authentication, or translated forbidden action error |
+| Admin `404`/`409`/`400`               | Translated not-found, conflict, or validation message                       |
+| Network failure                       | Translated â€œcannot reach serverâ€ message                                 |
 
 Raw backend error text is not rendered as customer-facing copy. The mapping
 in `src/lib/admin-errors.ts` translates status codes by context.
@@ -732,9 +732,9 @@ BACKEND_API_URL=http://localhost:4000
 NEXT_PUBLIC_BACKEND_API_URL=http://localhost:4000
 ```
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `BACKEND_API_URL` | Recommended | Absolute Express origin for server-rendered requests. Defaults to `http://localhost:4000`. |
+| Variable                      | Required                     | Description                                                                                        |
+| ----------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `BACKEND_API_URL`             | Recommended                  | Absolute Express origin for server-rendered requests. Defaults to `http://localhost:4000`.         |
 | `NEXT_PUBLIC_BACKEND_API_URL` | Required for browser actions | Public Express origin for browser requests and image uploads. Defaults to `http://localhost:4000`. |
 
 Do not add credentials or PINs to `.env.example`. The backend URL may be
@@ -966,34 +966,34 @@ copy. Avoid inline customer-facing strings in components.
 
 ## Troubleshooting
 
-| Symptom | Likely cause and solution |
-| --- | --- |
-| Coffee menu does not load | Check that the slug exists in MongoDB, the backend is running, and both backend URL variables point to the API origin. A `400`/`404` is intentionally shown as a 404 page. |
-| Admin PIN is rejected | Confirm that the PIN belongs to the correct scope: app PIN for `/faza/admin`, coffee PIN for `/faza/:slug/admin`. The gate accepts exactly four digits. |
-| Categories are empty | The coffee API returned no category summaries. Create categories in the coffee backoffice and reload the public menu. |
-| Items are not displayed | Confirm the selected category has items and that `/api/v1/categories/:categoryId/items` is reachable. A successful empty array is rendered as an empty state. |
-| Images do not load | Images must be absolute `http`/`https` URLs. The UI falls back to gradient art when the remote image fails. |
-| CORS error | Browser requests go directly to the backend. Configure backend CORS for the frontend origin and verify `NEXT_PUBLIC_BACKEND_API_URL`. |
-| API unavailable | Start the backend on port `4000`, or update `.env` and restart the Next dev server. Environment changes are not picked up by an already-running process. |
+| Symptom                              | Likely cause and solution                                                                                                                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Coffee menu does not load            | Check that the slug exists in MongoDB, the backend is running, and both backend URL variables point to the API origin. A `400`/`404` is intentionally shown as a 404 page.                       |
+| Admin PIN is rejected                | Confirm that the PIN belongs to the correct scope: app PIN for `/faza/admin`, coffee PIN for `/faza/:slug/admin`. The gate accepts exactly four digits.                                          |
+| Categories are empty                 | The coffee API returned no category summaries. Create categories in the coffee backoffice and reload the public menu.                                                                            |
+| Items are not displayed              | Confirm the selected category has items and that `/api/v1/categories/:categoryId/items` is reachable. A successful empty array is rendered as an empty state.                                    |
+| Images do not load                   | Images must be absolute `http`/`https` URLs. The UI falls back to gradient art when the remote image fails.                                                                                      |
+| CORS error                           | Browser requests go directly to the backend. Configure backend CORS for the frontend origin and verify `NEXT_PUBLIC_BACKEND_API_URL`.                                                            |
+| API unavailable                      | Start the backend on port `4000`, or update `.env` and restart the Next dev server. Environment changes are not picked up by an already-running process.                                         |
 | Image upload rejected or unavailable | Check the authenticated session, backend upload limit, backend CORS configuration, and that `NEXT_PUBLIC_BACKEND_API_URL` points directly to the Express API rather than the Next/Vercel origin. |
-| Production variable missing | Set both backend URL variables in the hosting platform before building/starting. Cloudflare variables belong only to the backend. |
-| Session appears to disappear | Admin sessions use `sessionStorage`, so closing the browser tab clears them. A backend `401`/`403` also intentionally returns the user to the PIN gate. |
-| Wrong coffee message appears | A coffee-admin token is bound to one coffee. Sign out and authenticate at the matching `/:slug/admin` route. |
+| Production variable missing          | Set both backend URL variables in the hosting platform before building/starting. Cloudflare variables belong only to the backend.                                                                |
+| Session appears to disappear         | Admin sessions use `sessionStorage`, so closing the browser tab clears them. A backend `401`/`403` also intentionally returns the user to the PIN gate.                                          |
+| Wrong coffee message appears         | A coffee-admin token is bound to one coffee. Sign out and authenticate at the matching `/:slug/admin` route.                                                                                     |
 
 ## Quick reference
 
 ### Routes
 
-| Route | Purpose | Access |
-| --- | --- | --- |
-| `/` | Redirect to Faza landing | Public |
-| `/faza` | Faza brand landing | Public |
-| `/faza/:slug` | Coffee menu and category bubbles | Public |
-| `/faza/:slug/:categName` | Items for one coffee category | Public |
-| `/faza/admin` | Application backoffice | Four-digit PIN |
-| `/faza/:slug/admin` | Coffee backoffice | Four-digit PIN |
-| `/:coffeeSlug` | Legacy redirect to canonical coffee menu | Public |
-| `/:coffeeSlug/admin` | Legacy redirect to canonical coffee backoffice | Four-digit PIN |
+| Route                    | Purpose                                        | Access         |
+| ------------------------ | ---------------------------------------------- | -------------- |
+| `/`                      | Redirect to Faza landing                       | Public         |
+| `/faza`                  | Faza brand landing                             | Public         |
+| `/faza/:slug`            | Coffee menu and category bubbles               | Public         |
+| `/faza/:slug/:categName` | Items for one coffee category                  | Public         |
+| `/faza/admin`            | Application backoffice                         | Four-digit PIN |
+| `/faza/:slug/admin`      | Coffee backoffice                              | Four-digit PIN |
+| `/:coffeeSlug`           | Legacy redirect to canonical coffee menu       | Public         |
+| `/:coffeeSlug/admin`     | Legacy redirect to canonical coffee backoffice | Four-digit PIN |
 
 ### Main API dependencies
 
@@ -1139,9 +1139,9 @@ in `src/app/globals.css`; there is no JavaScript viewport store.
 
 ## Environment variables
 
-| Variable | Required | Purpose | Example |
-| --- | --- | --- | --- |
-| `BACKEND_API_URL` | Optional in local development; required for SSR against a remote backend | Server-side Express origin | `https://api.example.com` |
+| Variable                      | Required                                                                                       | Purpose                                           | Example                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------- | ------------------------- |
+| `BACKEND_API_URL`             | Optional in local development; required for SSR against a remote backend                       | Server-side Express origin                        | `https://api.example.com` |
 | `NEXT_PUBLIC_BACKEND_API_URL` | Optional because it falls back to localhost; required for browser use against a remote backend | Browser-visible Express origin, including uploads | `https://api.example.com` |
 
 The fallback for both is `http://localhost:4000`. Never put PINs, JWTs,

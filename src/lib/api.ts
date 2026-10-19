@@ -40,17 +40,12 @@ const API_VERSION_PREFIX = "/api/v1";
  * Core request helper shared by the public API and the admin API. Backend
  * responses always use the `{ success, data | message }` envelope.
  */
-export async function requestWithToken<T>(
-  path: string,
-  init: RequestInit = {},
-  token?: string,
-): Promise<T> {
+export async function requestWithToken<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
   }
-  const isMultipartBody =
-    typeof FormData !== "undefined" && init.body instanceof FormData;
+  const isMultipartBody = typeof FormData !== "undefined" && init.body instanceof FormData;
   if (init.body !== undefined && !isMultipartBody && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
@@ -173,11 +168,7 @@ export function createCoffee(token: string, body: CreateCoffeeBody): Promise<Adm
 }
 
 /** PATCH /api/v1/admin/coffees/:coffeeId */
-export function updateCoffee(
-  token: string,
-  coffeeId: string,
-  body: UpdateCoffeeBody,
-): Promise<AdminCoffeeDto> {
+export function updateCoffee(token: string, coffeeId: string, body: UpdateCoffeeBody): Promise<AdminCoffeeDto> {
   return request<AdminCoffeeDto>(`/admin/coffees/${encodeURIComponent(coffeeId)}`, {
     method: "PATCH",
     headers: authHeader(token),
@@ -223,11 +214,7 @@ export function updateMyCoffee(token: string, body: UpdateCoffeeBody): Promise<A
 }
 
 /** PATCH /api/v1/admin/my-coffee/pin */
-export function changeMyPin(
-  token: string,
-  currentPin: string,
-  newPin: string,
-): Promise<{ id: string }> {
+export function changeMyPin(token: string, currentPin: string, newPin: string): Promise<{ id: string }> {
   return request<{ id: string }>("/admin/my-coffee/pin", {
     method: "PATCH",
     headers: authHeader(token),
@@ -252,11 +239,7 @@ export function createMyCategory(token: string, body: CategoryBody): Promise<Adm
 }
 
 /** PATCH /api/v1/admin/my-coffee/categories/:categoryId */
-export function updateMyCategory(
-  token: string,
-  categoryId: string,
-  body: CategoryBody,
-): Promise<AdminCategoryDto> {
+export function updateMyCategory(token: string, categoryId: string, body: CategoryBody): Promise<AdminCategoryDto> {
   return request<AdminCategoryDto>(`/admin/my-coffee/categories/${encodeURIComponent(categoryId)}`, {
     method: "PATCH",
     headers: authHeader(token),
@@ -266,48 +249,30 @@ export function updateMyCategory(
 
 /** DELETE /api/v1/admin/my-coffee/categories/:categoryId (cascades items). */
 export function deleteMyCategory(token: string, categoryId: string): Promise<{ id: string }> {
-  return request<{ id: string }>(
-    `/admin/my-coffee/categories/${encodeURIComponent(categoryId)}`,
-    {
-      method: "DELETE",
-      headers: authHeader(token),
-    },
-  );
+  return request<{ id: string }>(`/admin/my-coffee/categories/${encodeURIComponent(categoryId)}`, {
+    method: "DELETE",
+    headers: authHeader(token),
+  });
 }
 
 /** GET /api/v1/admin/my-coffee/categories/:categoryId/items */
-export function listMyCategoryItems(
-  token: string,
-  categoryId: string,
-): Promise<AdminItemDto[]> {
-  return request<AdminItemDto[]>(
-    `/admin/my-coffee/categories/${encodeURIComponent(categoryId)}/items`,
-    { headers: authHeader(token) },
-  );
+export function listMyCategoryItems(token: string, categoryId: string): Promise<AdminItemDto[]> {
+  return request<AdminItemDto[]>(`/admin/my-coffee/categories/${encodeURIComponent(categoryId)}/items`, {
+    headers: authHeader(token),
+  });
 }
 
 /** POST /api/v1/admin/my-coffee/categories/:categoryId/items */
-export function createMyItem(
-  token: string,
-  categoryId: string,
-  body: CreateItemBody,
-): Promise<AdminItemDto> {
-  return request<AdminItemDto>(
-    `/admin/my-coffee/categories/${encodeURIComponent(categoryId)}/items`,
-    {
-      method: "POST",
-      headers: authHeader(token),
-      ...jsonBody(body),
-    },
-  );
+export function createMyItem(token: string, categoryId: string, body: CreateItemBody): Promise<AdminItemDto> {
+  return request<AdminItemDto>(`/admin/my-coffee/categories/${encodeURIComponent(categoryId)}/items`, {
+    method: "POST",
+    headers: authHeader(token),
+    ...jsonBody(body),
+  });
 }
 
 /** PATCH /api/v1/admin/my-coffee/items/:itemId */
-export function updateMyItem(
-  token: string,
-  itemId: string,
-  body: UpdateItemBody,
-): Promise<AdminItemDto> {
+export function updateMyItem(token: string, itemId: string, body: UpdateItemBody): Promise<AdminItemDto> {
   return request<AdminItemDto>(`/admin/my-coffee/items/${encodeURIComponent(itemId)}`, {
     method: "PATCH",
     headers: authHeader(token),

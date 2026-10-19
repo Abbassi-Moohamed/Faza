@@ -63,7 +63,10 @@ export function CategoryForm({
   };
 
   return (
-    <section className={cn("admin-form", (busy || submitting) && "admin-form--disabled")} aria-busy={busy || submitting}>
+    <section
+      className={cn("admin-form", (busy || submitting) && "admin-form--disabled")}
+      aria-busy={busy || submitting}
+    >
       <div className="admin-form__head">
         <h3 className="admin-form__title">{title}</h3>
       </div>
@@ -126,7 +129,12 @@ export function CategoryForm({
         <button type="button" className="admin-btn admin-btn--ghost" disabled={busy || submitting} onClick={onCancel}>
           {dict.admin.coffeeForm.cancel}
         </button>
-        <button type="button" className="admin-btn admin-btn--primary" disabled={busy || submitting} onClick={() => void handleSubmit()}>
+        <button
+          type="button"
+          className="admin-btn admin-btn--primary"
+          disabled={busy || submitting}
+          onClick={() => void handleSubmit()}
+        >
           {busy || submitting ? dict.admin.coffeeForm.saving : dict.admin.coffeeForm.save}
         </button>
       </div>

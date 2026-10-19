@@ -48,12 +48,7 @@ export function CategoryList({
 
   if (error) {
     return (
-      <AdminNotice
-        title={d.categories.loadError}
-        message={error}
-        actionLabel={d.errors.retry}
-        onAction={onRetry}
-      />
+      <AdminNotice title={d.categories.loadError} message={error} actionLabel={d.errors.retry} onAction={onRetry} />
     );
   }
 
@@ -92,11 +87,7 @@ export function CategoryList({
               <span className="category-row__count">{d.categories.itemCount(count)}</span>
             </button>
             <div className="category-row__actions">
-              <button
-                type="button"
-                className="row-action row-action--danger"
-                onClick={() => onDelete(category)}
-              >
+              <button type="button" className="row-action row-action--danger" onClick={() => onDelete(category)}>
                 {d.delete.confirm}
               </button>
               <button type="button" className="row-action" onClick={() => onEdit(category)}>

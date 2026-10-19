@@ -19,7 +19,17 @@ interface ItemListProps {
   availabilityBusyId?: string | null;
 }
 
-export function ItemList({ dict, items, loading, error, onRetry, onEdit, onDelete, onToggleAvailability, availabilityBusyId }: ItemListProps) {
+export function ItemList({
+  dict,
+  items,
+  loading,
+  error,
+  onRetry,
+  onEdit,
+  onDelete,
+  onToggleAvailability,
+  availabilityBusyId,
+}: ItemListProps) {
   const d = dict.admin;
 
   if (loading) {
@@ -39,14 +49,7 @@ export function ItemList({ dict, items, loading, error, onRetry, onEdit, onDelet
   }
 
   if (error) {
-    return (
-      <AdminNotice
-        title={d.items.loadError}
-        message={error}
-        actionLabel={d.errors.retry}
-        onAction={onRetry}
-      />
-    );
+    return <AdminNotice title={d.items.loadError} message={error} actionLabel={d.errors.retry} onAction={onRetry} />;
   }
 
   if (items.length === 0) {

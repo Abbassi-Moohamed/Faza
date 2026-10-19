@@ -19,16 +19,7 @@ interface CoffeeListProps {
   onDelete: (coffee: AdminCoffeeDto) => void;
 }
 
-export function CoffeeList({
-  dict,
-  coffees,
-  loading,
-  error,
-  onRetry,
-  onEdit,
-  onResetPin,
-  onDelete,
-}: CoffeeListProps) {
+export function CoffeeList({ dict, coffees, loading, error, onRetry, onEdit, onResetPin, onDelete }: CoffeeListProps) {
   const d = dict.admin;
 
   if (loading) {
@@ -85,7 +76,11 @@ export function CoffeeList({
             >
               {d.app.resetPin}
             </button>
-            <button type="button" className="coffee-list__action coffee-list__action--danger" onClick={() => onDelete(coffee)}>
+            <button
+              type="button"
+              className="coffee-list__action coffee-list__action--danger"
+              onClick={() => onDelete(coffee)}
+            >
               {d.delete.confirm}
             </button>
           </div>
