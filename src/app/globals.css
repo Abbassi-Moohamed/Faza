@@ -1014,6 +1014,8 @@ img {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+  /* Room for the half of a promotion ticket that hangs above the card. */
+  padding-top: 0.5rem;
 }
 .order-item .add-btn {
   align-self: stretch;
@@ -1498,7 +1500,6 @@ img {
   background: var(--color-cream-100);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
-  overflow: hidden;
   box-shadow: var(--shadow-card);
   animation: item-card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--delay, 0ms);
@@ -1521,33 +1522,69 @@ img {
   box-shadow: var(--shadow-card);
 }
 
+/**
+ * Promotion ticket. It is deliberately taken out of the card's flow and hung
+ * on the top edge so that half of it sits above the card and half inside:
+ * the shape is painted on the inner span while this shell owns the placement
+ * and the animation, because `filter: drop-shadow()` follows the notched
+ * silhouette (a `box-shadow` would be clipped by the mask).
+ */
 .item-card__promotion {
-  position: relative;
-  z-index: 2;
-  align-self: flex-end;
-  margin: 0.7rem 0.75rem -0.15rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: var(--radius-full);
-  background: var(--color-green-700);
-  box-shadow: 0 0.25rem 0.65rem rgb(18 76 46 / 0.22);
-  color: var(--color-cream-100);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  /* Scale from the inner edge so the pulse grows leftwards, away from the
-     card corner, and never clips against the card's rounded border. */
+  position: absolute;
+  top: -1px;
+  right: 0.85rem;
+  z-index: 3;
+  /* No strut: the shell's height is exactly the ticket's, so -50% is a true half. */
+  line-height: 0;
+  transform: translateY(-50%);
+  /* Scale from the right edge so the pulse grows inwards, never past the card. */
   transform-origin: 100% 50%;
+  filter: drop-shadow(0 0.3rem 0.3rem rgb(18 76 46 / 0.3));
   animation: item-card-promo-pulse 2s ease-in-out infinite;
+}
+
+.item-card__promotion-shape {
+  --promo-notch: 0.3rem;
+  display: block;
+  padding: 0.32rem 0.95rem;
+  border-radius: 0.5rem;
+  /* The light band stops before the label: the text always sits on the flat
+     green or darker, which keeps it at 4.7:1 or better. */
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-green-700) 88%, #ffffff) 0%,
+    var(--color-green-700) 26%,
+    color-mix(in srgb, var(--color-green-700) 92%, #000000) 100%
+  );
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.24);
+  color: var(--color-cream-100);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+  white-space: nowrap;
+  /* Two perforations bitten out of the side edges, like a torn coupon. */
+  -webkit-mask-image:
+    radial-gradient(circle var(--promo-notch) at 0 50%, transparent 96%, #000 100%),
+    radial-gradient(circle var(--promo-notch) at 100% 50%, transparent 96%, #000 100%);
+  mask-image:
+    radial-gradient(circle var(--promo-notch) at 0 50%, transparent 96%, #000 100%),
+    radial-gradient(circle var(--promo-notch) at 100% 50%, transparent 96%, #000 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 @keyframes item-card-promo-pulse {
   0%,
   100% {
-    transform: scale(1);
+    transform: translateY(-50%) scale(1);
   }
   50% {
-    transform: scale(1.08);
+    transform: translateY(-50%) scale(1.08);
   }
 }
 
@@ -1559,9 +1596,14 @@ img {
 
 /* Nothing to promote on an item that cannot be ordered. */
 .item-card--unavailable .item-card__promotion {
-  background: var(--color-mocha-700);
-  box-shadow: none;
+  filter: none;
   animation: none;
+}
+
+.item-card--unavailable .item-card__promotion-shape {
+  background-image: none;
+  background-color: var(--color-mocha-700);
+  box-shadow: none;
 }
 
 .item-card__unavailable-overlay {
@@ -1625,6 +1667,10 @@ img {
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
+  /* The card itself can no longer clip (the promotion ticket hangs over its
+     top edge), so the artwork rounds its own top corners instead. */
+  border-start-start-radius: calc(var(--radius-lg) - 2px);
+  border-start-end-radius: calc(var(--radius-lg) - 2px);
 }
 
 .item-card__art img {

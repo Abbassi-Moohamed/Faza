@@ -25,7 +25,9 @@ export function MenuItemCard({ item, currency, locale, delay = 0 }: MenuItemCard
     >
       {hasPromotion ? (
         <span className="item-card__promotion">
-          {item.isAvailable ? dict.menuItem.promotion : dict.menuItem.unavailable}
+          <span className="item-card__promotion-shape">
+            {item.isAvailable ? dict.menuItem.promotion : dict.menuItem.unavailable}
+          </span>
         </span>
       ) : null}
       <div className="item-card__art">
