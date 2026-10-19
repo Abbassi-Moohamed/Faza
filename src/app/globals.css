@@ -1022,7 +1022,9 @@ img {
  * paints above it) or crowds the card above. Only promoted rows pay for it.
  */
 .order-item:has(.item-card--promotion) {
-  padding-top: 1.5rem;
+  /* Tracks the ticket's half-height (`.item-card__promotion-shape`); raising
+     one without the other re-introduces the crowding this fixes. */
+  padding-top: 2rem;
 }
 .order-item .add-btn {
   align-self: stretch;
@@ -1553,7 +1555,10 @@ img {
 .item-card__promotion-shape {
   --promo-notch: 0.3rem;
   display: block;
-  padding: 0.32rem 0.95rem;
+  /* Block padding is ~1.5x the horizontal rhythm so the ticket reads as a
+     substantial tag: line-height + 2x this is the ticket's full height, and
+     half of it overhangs the card (see `.order-item:has(...)`). */
+  padding: 0.7rem 0.95rem;
   border-radius: 0.5rem;
   /* The light band stops before the label: the text always sits on the flat
      green or darker, which keeps it at 4.7:1 or better. */
