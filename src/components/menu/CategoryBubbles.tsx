@@ -16,11 +16,12 @@ interface CategoryLinkProps {
   coffeeSlug: string;
   category: MenuCategory;
   visualIndex: number;
-  position?: { x: number; y: number; width: number; height: number };
+  position?: { x: number; y: number; dx: number; dy: number; width: number; height: number };
   onDragStart: (event: PointerEvent<HTMLAnchorElement>) => void;
   onDragMove: (event: PointerEvent<HTMLAnchorElement>) => void;
   onDragEnd: (event: PointerEvent<HTMLAnchorElement>) => void;
   onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onContextMenu: (event: MouseEvent<HTMLAnchorElement>) => void;
   dragging: boolean;
   isLastTouched: boolean;
   pressed: boolean;
@@ -39,6 +40,7 @@ function CategoryLink({
   onDragMove,
   onDragEnd,
   onClick,
+  onContextMenu,
   dragging,
   isLastTouched,
   pressed,
@@ -73,18 +75,23 @@ function CategoryLink({
   return (
     <div
       className={`bubble-drag-layer${dragging ? " bubble-drag-layer--active" : ""}`}
-      style={{
-        ...(position
-          ? {
-              position: "absolute",
-              left: position.x,
-              top: position.y,
-              width: position.width,
-              height: position.height,
-            }
-          : {}),
-        zIndex: isLastTouched ? 1003 : 1001,
-      }}
+      style={
+        {
+          ...(position
+            ? {
+                position: "absolute",
+                left: position.x,
+                top: position.y,
+                width: position.width,
+                height: position.height,
+                // GPU-composited offset: never touches layout while dragging.
+                "--drag-x": `${position.dx}px`,
+                "--drag-y": `${position.dy}px`,
+              }
+            : {}),
+          zIndex: isLastTouched ? 1003 : 1001,
+        } as CSSProperties
+      }
     >
       <Link
         href={categoryHref(coffeeSlug, category.name)}
@@ -98,6 +105,7 @@ function CategoryLink({
         onPointerUp={onDragEnd}
         onPointerCancel={onDragEnd}
         onClick={onClick}
+        onContextMenu={onContextMenu}
       >
         <span className="bubble__icon" aria-hidden="true">
           {category.image ? (
@@ -139,7 +147,7 @@ const markDragHintSeen = () => {
   }
 };
 
-type GesturePhase = "pending" | "scroll" | "drag";
+type GesturePhase = "pending" | "drag" | "aborted";
 
 interface Gesture {
   id: string;
@@ -147,7 +155,6 @@ interface Gesture {
   phase: GesturePhase;
   startX: number;
   startY: number;
-  lastY: number;
   grabX: number;
   grabY: number;
   sceneLeft: number;
@@ -159,50 +166,10 @@ interface Gesture {
   moved: boolean;
 }
 
+/** How long a finger must rest on a bubble before dragging takes over. */
 const DRAG_ARM_DELAY = 220;
-const MOVE_SLOP = 6;
-const SCROLL_SLOP = 8;
-/** Window used to estimate the fling velocity at pointer release. */
-const VELOCITY_WINDOW = 120;
-/** Exponential decay constant of the momentum scroll, in milliseconds. */
-const MOMENTUM_DECAY = 325;
-/** Clamp so an aggressive flick cannot fling the menu across several screens. */
-const MAX_FLING_SPEED = 6;
-
-/**
- * Nearest ancestor that actually scrolls vertically. Returns `null` when the
- * document itself scrolls, so callers fall back to the window.
- */
-function findScrollTarget(start: Element | null): HTMLElement | null {
-  let node = start?.parentElement ?? null;
-  while (node && node !== document.body && node !== document.documentElement) {
-    const { overflowY } = window.getComputedStyle(node);
-    if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
-      return node;
-    }
-    node = node.parentElement;
-  }
-  return null;
-}
-
-/**
- * Scroll the document or a container without triggering smooth-scroll.
- * `behavior: "instant"` is required: the app sets `scroll-behavior: smooth`,
- * which otherwise animates every assignment, so successive pan updates fight
- * the animation and the scroll trails far behind the finger.
- */
-function scrollByY(target: HTMLElement | null, delta: number) {
-  if (delta === 0) return;
-  const scroller = target ?? document.scrollingElement ?? document.documentElement;
-  scroller.scrollTo({ top: scroller.scrollTop + delta, behavior: "instant" });
-}
-
-function currentScrollTop(target: HTMLElement | null) {
-  if (target) {
-    return target.scrollTop;
-  }
-  return (document.scrollingElement ?? document.documentElement).scrollTop;
-}
+/** Movement below this is still a press; above it the visitor is scrolling. */
+const MOVE_SLOP = 8;
 
 interface CategoryBubblesProps {
   /** Public slug of the coffee the categories belong to. */
@@ -217,17 +184,14 @@ interface CategoryBubblesProps {
 export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps) {
   const dict = getDictionary();
   const rows = layoutBubbleRows(categories);
-  const [positions, setPositions] = useState<Record<string, { x: number; y: number; width: number; height: number }>>(
-    {},
-  );
+  const [positions, setPositions] = useState<
+    Record<string, { x: number; y: number; dx: number; dy: number; width: number; height: number }>
+  >({});
   const gestureRef = useRef<Gesture | null>(null);
   const armTimerRef = useRef<number | null>(null);
-  const inertiaRef = useRef<number | null>(null);
-  const scrollFrameRef = useRef<number | null>(null);
-  const scrollTargetRef = useRef<HTMLElement | null>(null);
-  const pendingScrollRef = useRef(0);
-  const velocitySamplesRef = useRef<Array<{ t: number; y: number }>>([]);
+  const touchBlockRef = useRef<(() => void) | null>(null);
   const suppressClickRef = useRef(false);
+  const lastPointerTypeRef = useRef("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hasDragged, setHasDragged] = useState(false);
   // One-time drag hint: shown until the visitor drags a bubble for the first time.
@@ -242,103 +206,36 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     }
   };
 
-  const stopInertia = () => {
-    if (inertiaRef.current !== null) {
-      window.cancelAnimationFrame(inertiaRef.current);
-      inertiaRef.current = null;
-    }
-  };
-
-  const cancelScrollFrame = () => {
-    if (scrollFrameRef.current !== null) {
-      window.cancelAnimationFrame(scrollFrameRef.current);
-      scrollFrameRef.current = null;
-    }
-  };
-
-  /** Apply any pan delta that is still waiting for the next animation frame. */
-  const flushScroll = () => {
-    cancelScrollFrame();
-    const delta = pendingScrollRef.current;
-    pendingScrollRef.current = 0;
-    scrollByY(scrollTargetRef.current, delta);
+  const releaseTouchScroll = () => {
+    touchBlockRef.current?.();
+    touchBlockRef.current = null;
   };
 
   /**
-   * Coalesce pan deltas into one scroll write per frame. Touchscreens report
-   * several input samples per frame; batching avoids layout thrash and keeps
-   * the page locked to the finger across 60/90/120 Hz displays.
+   * Once a drag is armed, keep the browser from starting a pan so the pointer
+   * can drive the bubble. `pointermove.preventDefault()` does not stop touch
+   * scrolling; a non-passive `touchmove` listener does. It is only attached
+   * after the long-press, so an ordinary swipe keeps native scrolling.
    */
-  const queueScroll = (delta: number) => {
-    pendingScrollRef.current += delta;
-    if (scrollFrameRef.current !== null) return;
-    scrollFrameRef.current = window.requestAnimationFrame(() => {
-      scrollFrameRef.current = null;
-      const pending = pendingScrollRef.current;
-      pendingScrollRef.current = 0;
-      scrollByY(scrollTargetRef.current, pending);
-    });
-  };
-
-  /** Finger velocity over the last few samples, in px/ms, positive downwards. */
-  const releaseVelocity = (at: number) => {
-    const samples = velocitySamplesRef.current;
-    const last = samples[samples.length - 1];
-    if (!last || at - last.t > VELOCITY_WINDOW) {
-      // The finger rested before lifting: no fling.
-      return 0;
-    }
-    const oldest = samples.find((sample) => sample.t >= at - VELOCITY_WINDOW) ?? last;
-    const elapsed = last.t - oldest.t;
-    if (elapsed <= 0) return 0;
-    return (oldest.y - last.y) / elapsed;
+  const blockTouchScroll = () => {
+    releaseTouchScroll();
+    const onTouchMove = (event: TouchEvent) => event.preventDefault();
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    touchBlockRef.current = () => document.removeEventListener("touchmove", onTouchMove);
   };
 
   useEffect(
     () => () => {
       if (armTimerRef.current !== null) window.clearTimeout(armTimerRef.current);
-      if (inertiaRef.current !== null) window.cancelAnimationFrame(inertiaRef.current);
-      if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
+      releaseTouchScroll();
     },
     [],
   );
 
-  /** Momentum scroll so a swipe that starts on a bubble still feels native. */
-  const startInertia = (at: number) => {
-    stopInertia();
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let velocity = Math.max(-MAX_FLING_SPEED, Math.min(MAX_FLING_SPEED, releaseVelocity(at)));
-    if (Math.abs(velocity) < 0.05) return;
-    let last: number | null = null;
-    const step = (now: number) => {
-      if (last === null) {
-        last = now;
-        inertiaRef.current = window.requestAnimationFrame(step);
-        return;
-      }
-      const dt = Math.min(now - last, 50);
-      last = now;
-      const before = currentScrollTop(scrollTargetRef.current);
-      scrollByY(scrollTargetRef.current, velocity * dt);
-      const after = currentScrollTop(scrollTargetRef.current);
-      velocity *= Math.exp(-dt / MOMENTUM_DECAY);
-      if (after === before || Math.abs(velocity) < 0.02) {
-        inertiaRef.current = null;
-        return;
-      }
-      inertiaRef.current = window.requestAnimationFrame(step);
-    };
-    inertiaRef.current = window.requestAnimationFrame(step);
-  };
-
-  const getScene = (event: PointerEvent<HTMLAnchorElement>) => {
+  /** Bounds of the bubble field the dragged bubble is clamped to. */
+  const getSceneBounds = (event: PointerEvent<HTMLAnchorElement>) => {
     const scene = event.currentTarget.closest(".bubble-field");
-    if (!scene || typeof window === "undefined") {
-      return null;
-    }
-
-    const bounds = scene.getBoundingClientRect();
-    return { element: scene, bounds };
+    return scene?.getBoundingClientRect() ?? null;
   };
 
   const armDrag = (gesture: Gesture) => {
@@ -346,6 +243,7 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       return;
     }
     gesture.phase = "drag";
+    blockTouchScroll();
     setDraggingId(gesture.id);
     setPressedId(null);
     suppressClickRef.current = true;
@@ -354,13 +252,12 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
   const handleDragStart = (id: string, event: PointerEvent<HTMLAnchorElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     if (gestureRef.current) return;
-    const scene = getScene(event);
-    if (!scene) return;
-    stopInertia();
-    flushScroll();
+    const bounds = getSceneBounds(event);
+    if (!bounds) return;
     clearArmTimer();
+    releaseTouchScroll();
     suppressClickRef.current = false;
-    velocitySamplesRef.current = [];
+    lastPointerTypeRef.current = event.pointerType;
     setLastTouchedId(id);
     setPressedId(id);
     const bubble = event.currentTarget.getBoundingClientRect();
@@ -371,13 +268,12 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       phase: isTouch ? "pending" : "drag",
       startX: event.clientX,
       startY: event.clientY,
-      lastY: event.clientY,
       grabX: event.clientX - bubble.left,
       grabY: event.clientY - bubble.top,
-      sceneLeft: scene.bounds.left,
-      sceneTop: scene.bounds.top,
-      sceneWidth: scene.bounds.width,
-      sceneHeight: scene.bounds.height,
+      sceneLeft: bounds.left,
+      sceneTop: bounds.top,
+      sceneWidth: bounds.width,
+      sceneHeight: bounds.height,
       bubbleWidth: bubble.width,
       bubbleHeight: bubble.height,
       moved: false,
@@ -397,69 +293,41 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
 
   const handleDragMove = (event: PointerEvent<HTMLAnchorElement>) => {
     const gesture = gestureRef.current;
-    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    if (!gesture || gesture.pointerId !== event.pointerId || gesture.phase === "aborted") return;
 
+    const distance = Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY);
     if (gesture.phase === "pending") {
-      const distance = Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY);
-      if (distance <= SCROLL_SLOP) {
-        gesture.lastY = event.clientY;
-        return;
-      }
-      // Intent is a scroll: take over panning manually so the gesture keeps
-      // working even though the bubble layer blocks native touch-action.
+      if (distance <= MOVE_SLOP) return;
+      // The finger is moving before the long-press completed: this is a scroll.
+      // Cancel the press and let the browser pan natively.
       clearArmTimer();
-      gesture.phase = "scroll";
-      scrollTargetRef.current = findScrollTarget(event.currentTarget);
-      velocitySamplesRef.current = [];
+      gesture.phase = "aborted";
       setPressedId(null);
-    }
-
-    if (gesture.phase === "scroll") {
-      // Pointer events are coalesced by the browser; using the newest sample
-      // of each batch keeps panning perfectly in sync with the finger.
-      const coalesced = event.nativeEvent.getCoalescedEvents?.() ?? [];
-      const points = coalesced.length > 0 ? coalesced : [event.nativeEvent];
-      const latest = points[points.length - 1];
-      const samples = velocitySamplesRef.current;
-      for (const point of points) {
-        samples.push({ t: point.timeStamp, y: point.clientY });
-      }
-      const cutoff = latest.timeStamp - VELOCITY_WINDOW;
-      while (samples.length > 0 && samples[0].t < cutoff) {
-        samples.shift();
-      }
-      queueScroll(gesture.lastY - latest.clientY);
-      gesture.lastY = latest.clientY;
       return;
     }
 
-    const nextX = event.clientX - gesture.sceneLeft - gesture.grabX;
-    const nextY = event.clientY - gesture.sceneTop - gesture.grabY;
-    if (Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) > MOVE_SLOP) {
-      if (!gesture.moved) {
-        setPositions((current) => ({
-          ...current,
-          [gesture.id]: {
-            x: gesture.startX - gesture.sceneLeft - gesture.grabX,
-            y: gesture.startY - gesture.sceneTop - gesture.grabY,
-            width: gesture.bubbleWidth,
-            height: gesture.bubbleHeight,
-          },
-        }));
-        setHasDragged(true);
-        markDragHintSeen();
-      }
+    if (distance > MOVE_SLOP && !gesture.moved) {
       gesture.moved = true;
       suppressClickRef.current = true;
+      setHasDragged(true);
+      markDragHintSeen();
     }
     if (!gesture.moved) return;
+    // The layer keeps its original placement and moves with a transform, so
+    // dragging only invalidates the compositor, never layout.
+    const baseX = gesture.startX - gesture.sceneLeft - gesture.grabX;
+    const baseY = gesture.startY - gesture.sceneTop - gesture.grabY;
     const maxX = Math.max(0, gesture.sceneWidth - gesture.bubbleWidth);
     const maxY = Math.max(0, gesture.sceneHeight - gesture.bubbleHeight);
+    const targetX = Math.max(0, Math.min(maxX, event.clientX - gesture.sceneLeft - gesture.grabX));
+    const targetY = Math.max(0, Math.min(maxY, event.clientY - gesture.sceneTop - gesture.grabY));
     setPositions((current) => ({
       ...current,
       [gesture.id]: {
-        x: Math.max(0, Math.min(maxX, nextX)),
-        y: Math.max(0, Math.min(maxY, nextY)),
+        x: baseX,
+        y: baseY,
+        dx: targetX - baseX,
+        dy: targetY - baseY,
         width: gesture.bubbleWidth,
         height: gesture.bubbleHeight,
       },
@@ -470,14 +338,11 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     const gesture = gestureRef.current;
     if (!gesture || gesture.pointerId !== event.pointerId) return;
     clearArmTimer();
-    const wasScrolling = gesture.phase === "scroll";
+    releaseTouchScroll();
     gestureRef.current = null;
     setDraggingId(null);
     setPressedId(null);
-    if (wasScrolling) {
-      flushScroll();
-      startInertia(event.timeStamp);
-    } else if (!gesture.moved) {
+    if (!gesture.moved) {
       // A press that never turned into a drag still behaves as a tap.
       suppressClickRef.current = false;
     }
@@ -487,6 +352,13 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     if (suppressClickRef.current) {
       event.preventDefault();
       suppressClickRef.current = false;
+    }
+  };
+
+  /** Android opens the link menu on long-press, which would interrupt a drag. */
+  const handleContextMenu = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (lastPointerTypeRef.current === "touch") {
+      event.preventDefault();
     }
   };
 
@@ -519,6 +391,7 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
               onDragMove={handleDragMove}
               onDragEnd={handleDragEnd}
               onClick={handleClick}
+              onContextMenu={handleContextMenu}
               dragging={draggingId === category.id}
               isLastTouched={lastTouchedId === category.id}
               pressed={pressedId === category.id}
