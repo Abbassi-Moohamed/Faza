@@ -19,10 +19,9 @@
   --color-green-700: #1d7a4b;
   --color-green-100: #dcefe2;
   /* Promotion accents: `promo` is the vivid yellow of the ticket surface and
-     the promoted card's outline; `promo-price` is the softer yellow of the
-     discounted price. */
+     the promoted card's outline. The price deliberately has no accent of its
+     own — it keeps the regular price colour. */
   --color-promo: #edc001;
-  --color-promo-price: #ffee8c;
 
   --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
   --font-body:
@@ -1658,8 +1657,9 @@ img {
   white-space: nowrap;
 }
 
+/* Only the size is bumped: the price keeps the regular price colour so a
+   promoted item reads its price exactly like any other card. */
 .item-card--promotion .item-card__price:not(.item-card__price--old) {
-  color: var(--color-promo-price);
   font-size: 1.08rem;
 }
 
