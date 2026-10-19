@@ -22,7 +22,7 @@ interface ServerToClientEvents {
 }
 
 interface ClientToServerEvents {
-  "order:subscribe": (orderId: string) => void;
+  "order:subscribe": (orderId: string, ack?: (result: { joined: boolean }) => void) => void;
   "order:unsubscribe": (orderId: string) => void;
 }
 
