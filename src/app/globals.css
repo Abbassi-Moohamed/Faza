@@ -20,7 +20,7 @@
   --color-green-100: #dcefe2;
   /* Promotion accent — one colour shared by the ticket surface and the
      discounted price. Vivid by design, so the ticket's label is dark ink. */
-  --color-promo: #ff9f1c;
+  --color-promo: #edc001;
 
   --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
   --font-body:
@@ -1564,7 +1564,7 @@ img {
   padding: 0.7rem 0.95rem;
   border-radius: 0.5rem;
   /* The light band stops before the label: the text always sits on the flat
-     orange or darker, which keeps it at 7.4:1 or better against the dark
+     gold or darker, which keeps it at 8.9:1 or better against the dark
      label. */
   background-image: linear-gradient(
     180deg,
@@ -1573,8 +1573,8 @@ img {
     color-mix(in srgb, var(--color-promo) 92%, #000000) 100%
   );
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.24);
-  /* Orange is far too light for cream text (1.8:1), so the label is dark:
-     8.8:1 on the flat orange, 7.4:1 on the darkest bottom band. */
+  /* Gold is far too light for cream text (1.5:1), so the label is dark:
+     9.8:1 on the flat gold, 8.9:1 on the darkest bottom band. */
   color: var(--color-espresso-900);
   font-size: 0.7rem;
   font-weight: 800;
