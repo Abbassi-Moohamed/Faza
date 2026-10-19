@@ -3335,6 +3335,64 @@ img {
   font-weight: 700;
 }
 
+.orders-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  color: #8a8f98;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.orders-live--on {
+  color: #28734e;
+}
+
+.orders-live__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.orders-live--on .orders-live__dot {
+  opacity: 1;
+  animation: orders-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes orders-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.orders-new-pill {
+  border: 1px solid #28734e;
+  border-radius: 999px;
+  background: #e8f4ec;
+  color: #1d5a3b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+}
+
+.orders-new-pill:hover {
+  background: #d8ecdf;
+}
+
+.orders-new-pill:focus-visible {
+  outline: 2px solid #28734e;
+  outline-offset: 2px;
+}
+
 .service-current-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4365,6 +4423,9 @@ img {
   .cart-bar__badge,
   .cart-dialog__panel,
   .cart-dialog__scrim {
+    animation: none;
+  }
+  .orders-live--on .orders-live__dot {
     animation: none;
   }
 }

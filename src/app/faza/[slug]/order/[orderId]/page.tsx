@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getDictionary } from "@/i18n";
 import { getOrder } from "@/lib/orders";
+import { getRealtimeSocket } from "@/lib/realtime";
 import type { OrderDto } from "@/types/backend";
 import { BackLink } from "@/components/layout/BackLink";
 import { ItemArt } from "@/components/menu/ItemArt";
@@ -16,6 +17,8 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const [slug, setSlug] = useState("");
   const [orderId, setOrderId] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [announce, setAnnounce] = useState("");
+  const previousStatusRef = useRef<OrderDto["status"] | null>(null);
   useEffect(() => {
     let active = true;
     void params.then(({ slug: nextSlug, orderId: nextId }) => {
@@ -23,7 +26,10 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
       setOrderId(nextId);
       return getOrder(nextId)
         .then((value) => {
-          if (active) setOrder(value);
+          if (active) {
+            previousStatusRef.current = value.status;
+            setOrder(value);
+          }
         })
         .catch(() => {
           if (active) setError(true);
@@ -33,12 +39,53 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
       active = false;
     };
   }, [params]);
+
+  // Realtime: subscribe to this order's room so status/payment changes made
+  // by the coffee arrive instantly. The manual refresh button stays as the
+  // fallback; on (re)connect we also resync over REST in case events were
+  // missed while offline.
+  useEffect(() => {
+    if (!orderId) return;
+    const socket = getRealtimeSocket();
+    const applyOrder = (next: OrderDto) => {
+      setOrder(next);
+      if (previousStatusRef.current && previousStatusRef.current !== next.status) {
+        const nextLabel =
+          next.status === "CONFIRMED"
+            ? d.order.statusConfirmed
+            : next.status === "REJECTED"
+              ? d.order.statusRejected
+              : d.order.statusPending;
+        setAnnounce(d.order.statusUpdatedAnnounce(nextLabel));
+      }
+      previousStatusRef.current = next.status;
+    };
+    const onUpdated = (payload: OrderDto) => {
+      if (payload.id !== orderId) return;
+      applyOrder(payload);
+    };
+    const onConnect = () => {
+      void getOrder(orderId)
+        .then(applyOrder)
+        .catch(() => undefined);
+    };
+    socket.on("order:updated", onUpdated);
+    socket.on("connect", onConnect);
+    socket.emit("order:subscribe", orderId);
+    if (socket.connected) onConnect();
+    return () => {
+      socket.off("order:updated", onUpdated);
+      socket.off("connect", onConnect);
+      socket.emit("order:unsubscribe", orderId);
+    };
+  }, [orderId, d]);
   const refresh = async () => {
     if (!orderId || refreshing) return;
     setRefreshing(true);
     setError(false);
     try {
       const latestOrder = await getOrder(orderId);
+      previousStatusRef.current = latestOrder.status;
       setOrder(latestOrder);
     } catch {
       setError(true);
@@ -56,6 +103,9 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     <main id="main">
       <section className="order-status container">
         {slug ? <BackLink className="order-status__back" href={`/faza/${slug}`} label={d.notFound.cta} /> : null}
+        <p className="sr-only" role="status" aria-live="polite">
+          {announce}
+        </p>
         <h1>{order ? d.order.confirmationTitle : d.order.status}</h1>
         {error ? (
           <p className="admin-form__error">{d.order.orderNotFound}</p>

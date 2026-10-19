@@ -34,6 +34,7 @@ export const fr: Dictionary = {
     paymentPaid: "Paiement reçu",
     refresh: "Actualiser",
     orderNotFound: "Commande introuvable.",
+    statusUpdatedAnnounce: (label: string) => `Statut mis à jour : ${label}.`,
   },
   landing: {
     eyebrow: "Menu numérique",
@@ -244,6 +245,9 @@ export const fr: Dictionary = {
       reject: "Refuser",
       refresh: "Actualiser",
       tableNumber: "Table",
+      live: "En direct",
+      offline: "Hors ligne",
+      newOrders: (count: number) => (count > 1 ? `${count} nouvelles commandes` : "Nouvelle commande"),
     },
     settings: {
       title: "Informations du café",

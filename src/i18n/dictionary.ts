@@ -32,6 +32,7 @@ export interface Dictionary {
     paymentPaid: string;
     refresh: string;
     orderNotFound: string;
+    statusUpdatedAnnounce: (label: string) => string;
   };
   landing: {
     eyebrow: string;
@@ -242,6 +243,9 @@ export interface Dictionary {
       reject: string;
       refresh: string;
       tableNumber: string;
+      live: string;
+      offline: string;
+      newOrders: (count: number) => string;
     };
     settings: {
       title: string;

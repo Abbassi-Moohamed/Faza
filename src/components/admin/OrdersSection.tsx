@@ -13,6 +13,7 @@ import {
   openServiceShift,
 } from "@/lib/api";
 import { listOrders, markOrderPaid, updateOrderStatus } from "@/lib/orders";
+import { getAdminRealtimeSocket } from "@/lib/realtime";
 import type { OrderDto, OrderStatus, ServiceShiftDto, TablePaymentOrderDto, TableSessionDto } from "@/types/backend";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 
@@ -71,11 +72,16 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const [serviceCloseTables, setServiceCloseTables] = useState<OpenServiceTable[] | null>(null);
   const [returnToServiceClose, setReturnToServiceClose] = useState(false);
   const [noActiveServiceOrder, setNoActiveServiceOrder] = useState<string | null>(null);
+  const [live, setLive] = useState(false);
+  const [newOrdersAvailable, setNewOrdersAvailable] = useState(0);
   const loadOrders = useCallback(() => {
     const status = section === "orders" ? filter : undefined;
     const paymentStatus = section === "orders" && paymentFilter !== "ALL" ? paymentFilter : undefined;
     void listOrders(token, status, paymentStatus)
-      .then((result) => setOrders(result.orders))
+      .then((result) => {
+        setOrders(result.orders);
+        setNewOrdersAvailable(0);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : "Erreur"));
   }, [token, filter, paymentFilter, section]);
 
@@ -110,6 +116,61 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     }, 0);
     return () => window.clearTimeout(handle);
   }, [loadShiftData]);
+
+  // Realtime: receive order:new / order:updated pushed by the backend, and
+  // resync over REST on every (re)connect so no event is lost while offline.
+  useEffect(() => {
+    const socket = getAdminRealtimeSocket(token);
+    const matchesCurrentFilters = (order: OrderDto) => {
+      // Service/tables sections load every status; only the orders list is filtered.
+      if (section !== "orders") return true;
+      if (order.status !== filter) return false;
+      if (filter === "CONFIRMED" && paymentFilter !== "ALL" && order.paymentStatus !== paymentFilter) return false;
+      return true;
+    };
+    const onNewOrder = (order: OrderDto) => {
+      setOrders((current) =>
+        current.some((existing) => existing.id === order.id)
+          ? current
+          : matchesCurrentFilters(order)
+            ? [order, ...current]
+            : current,
+      );
+      if (!matchesCurrentFilters(order)) setNewOrdersAvailable((count) => count + 1);
+      void loadShiftData();
+    };
+    const onUpdatedOrder = (order: OrderDto) => {
+      setOrders((current) => {
+        const exists = current.some((existing) => existing.id === order.id);
+        if (!matchesCurrentFilters(order)) return current.filter((existing) => existing.id !== order.id);
+        return exists ? current.map((existing) => (existing.id === order.id ? order : existing)) : [order, ...current];
+      });
+      void loadShiftData();
+    };
+    const onConnect = () => {
+      setLive(true);
+      loadOrders();
+      void loadShiftData();
+    };
+    const onDisconnect = () => setLive(false);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("order:new", onNewOrder);
+    socket.on("order:updated", onUpdatedOrder);
+    // Sync the indicator if the socket is already connected (e.g. the effect
+    // re-ran after a filter change); deferred to keep the effect body free
+    // of synchronous setState.
+    const syncTimer = window.setTimeout(() => {
+      if (socket.connected) setLive(true);
+    }, 0);
+    return () => {
+      window.clearTimeout(syncTimer);
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("order:new", onNewOrder);
+      socket.off("order:updated", onUpdatedOrder);
+    };
+  }, [token, filter, paymentFilter, section, loadOrders, loadShiftData]);
 
   const action = async (id: string, status: OrderStatus) => {
     try {
@@ -507,8 +568,17 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         <div className="admin-head" style={{ marginTop: "1.5rem" }}>
           <div className="admin-head__text">
             <h2 className="admin-head__title">{d.title}</h2>
+            <span className={`orders-live${live ? " orders-live--on" : ""}`} role="status">
+              <span className="orders-live__dot" aria-hidden="true" />
+              {live ? d.live : d.offline}
+            </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+            {newOrdersAvailable > 0 ? (
+              <button type="button" className="orders-new-pill" onClick={() => loadOrders()}>
+                ↓ {d.newOrders(newOrdersAvailable)}
+              </button>
+            ) : null}
             <select
               className="admin-field__input"
               value={filter}
