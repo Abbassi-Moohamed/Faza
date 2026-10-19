@@ -18,6 +18,12 @@
 
   --color-green-700: #1d7a4b;
   --color-green-100: #dcefe2;
+  /* Promotion accents: one hue, two tones. `mint` is the ticket surface — a
+     pastel that bright can only ever carry dark ink, never cream — and `ink`
+     is the same hue dark enough to be the discounted price's text on the
+     cream card. */
+  --color-promo-mint: #34d399;
+  --color-promo-ink: #065f46;
 
   --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
   --font-body:
@@ -1561,21 +1567,24 @@ img {
   padding: 0.7rem 0.95rem;
   border-radius: 0.5rem;
   /* The light band stops before the label: the text always sits on the flat
-     green or darker, which keeps it at 4.7:1 or better. */
+     mint or darker, which keeps it at 7.9:1 or better against the dark
+     label. */
   background-image: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-green-700) 88%, #ffffff) 0%,
-    var(--color-green-700) 26%,
-    color-mix(in srgb, var(--color-green-700) 92%, #000000) 100%
+    color-mix(in srgb, var(--color-promo-mint) 88%, #ffffff) 0%,
+    var(--color-promo-mint) 26%,
+    color-mix(in srgb, var(--color-promo-mint) 92%, #000000) 100%
   );
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.24);
-  color: var(--color-cream-100);
+  /* Mint is far too light for cream text (1.7:1), so the label is dark:
+     9.4:1 on the flat mint, 7.9:1 on the darkest bottom band. */
+  color: var(--color-espresso-900);
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   line-height: 1.2;
   text-transform: uppercase;
-  text-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.35);
   white-space: nowrap;
   /* Two perforations bitten out of the side edges, like a torn coupon. */
   -webkit-mask-image:
@@ -1615,6 +1624,9 @@ img {
 .item-card--unavailable .item-card__promotion-shape {
   background-image: none;
   background-color: var(--color-mocha-700);
+  /* The dark label is unreadable on the mocha shape, so this variant keeps
+     the cream label it always had. */
+  color: var(--color-cream-100);
   box-shadow: none;
 }
 
@@ -1646,7 +1658,7 @@ img {
 }
 
 .item-card--promotion .item-card__price:not(.item-card__price--old) {
-  color: var(--color-green-700);
+  color: var(--color-promo-ink);
   font-size: 1.08rem;
 }
 
