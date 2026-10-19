@@ -15,6 +15,9 @@
   --color-amber-500: #c2702a;
   --color-amber-100: #f2e2cd;
 
+  --color-green-700: #1d7a4b;
+  --color-green-100: #dcefe2;
+
   --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
   --font-body:
     var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -1505,15 +1508,16 @@ img {
 }
 
 .item-card--promotion {
-  border: 2px solid color-mix(in srgb, var(--color-amber-600) 68%, var(--color-line));
+  border: 2px solid color-mix(in srgb, var(--color-green-700) 72%, var(--color-line));
   box-shadow:
     var(--shadow-card),
-    0 0 0 4px color-mix(in srgb, var(--color-amber-100) 72%, transparent);
+    0 0 0 4px color-mix(in srgb, var(--color-green-100) 72%, transparent);
 }
 
 .item-card--unavailable {
-  border-color: color-mix(in srgb, var(--color-mocha-400) 50%, var(--color-line));
+  border: 1px solid color-mix(in srgb, var(--color-mocha-400) 50%, var(--color-line));
   background: var(--color-cream-50);
+  box-shadow: var(--shadow-card);
 }
 
 .item-card__promotion {
@@ -1523,8 +1527,8 @@ img {
   margin: 0.7rem 0.75rem -0.15rem;
   padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
-  background: var(--color-amber-600);
-  box-shadow: 0 0.25rem 0.65rem rgb(146 64 14 / 0.2);
+  background: var(--color-green-700);
+  box-shadow: 0 0.25rem 0.65rem rgb(18 76 46 / 0.22);
   color: var(--color-cream-100);
   font-size: 0.68rem;
   font-weight: 800;
@@ -1564,10 +1568,9 @@ img {
   white-space: nowrap;
 }
 
-.item-card__price--old {
-  color: var(--color-mocha-400);
-  font-size: 0.78rem;
-  text-decoration: line-through;
+.item-card--promotion .item-card__price:not(.item-card__price--old) {
+  color: var(--color-green-700);
+  font-size: 1.08rem;
 }
 
 .item-card__availability {
@@ -1637,6 +1640,19 @@ img {
   color: var(--color-espresso-700);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+}
+
+/**
+ * Must stay after `.item-card__price`: both selectors have the same
+ * specificity, so the struck-through regular price wins the base declaration
+ * only by source order.
+ */
+.item-card__price--old {
+  color: var(--color-mocha-400);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .item-card__description {
