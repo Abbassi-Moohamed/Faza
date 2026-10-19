@@ -84,6 +84,7 @@ export function toMenuCategory(category: CategoryDto): MenuCategory {
     image: category.image ?? undefined,
     accent: categoryAccent(category.id),
     icon: categoryIcon(category.id, category.name),
+    itemCount: category.itemCount,
     items: [],
   };
 }

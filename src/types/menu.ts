@@ -1,16 +1,5 @@
 export type CurrencyCode =
-  | "AUD"
-  | "CAD"
-  | "CHF"
-  | "DKK"
-  | "EUR"
-  | "GBP"
-  | "JPY"
-  | "NOK"
-  | "NZD"
-  | "SEK"
-  | "TND"
-  | "USD";
+  "AUD" | "CAD" | "CHF" | "DKK" | "EUR" | "GBP" | "JPY" | "NOK" | "NZD" | "SEK" | "TND" | "USD";
 
 export interface MenuItem {
   id: string;
@@ -34,5 +23,7 @@ export interface MenuCategory {
   icon?: string;
   /** Accent color used across the category's visuals. */
   accent: string;
+  /** Total items in the category, straight from the public coffee DTO. */
+  itemCount: number;
   items: MenuItem[];
 }

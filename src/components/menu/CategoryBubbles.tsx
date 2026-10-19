@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
-import { useRef, useState } from "react";
+import { useSyncExternalStore, useRef, useState } from "react";
 import Link from "next/link";
 
 import { getDictionary } from "@/i18n";
@@ -43,6 +43,7 @@ function CategoryLink({
   isLastTouched,
   pressed,
 }: CategoryLinkProps) {
+  const dict = getDictionary();
   const geometry = bubbleGeometry(category.id);
   const style = {
     flexGrow: CATEGORY_WEIGHT,
@@ -89,27 +90,53 @@ function CategoryLink({
         href={categoryHref(coffeeSlug, category.name)}
         className={`bubble${pressed ? " bubble--pressed" : ""}`}
         style={style}
-        aria-label={`${category.name}. Faites glisser pour déplacer.`}
+        aria-label={`${category.name}, ${dict.sheet.itemsCountLabel(category.itemCount)} — ${dict.explore.openCategory}`}
+        title={dict.explore.dragHint}
         onPointerDown={onDragStart}
         onPointerMove={onDragMove}
         onPointerUp={onDragEnd}
         onPointerCancel={onDragEnd}
         onClick={onClick}
       >
-      <span className="bubble__icon" aria-hidden="true">
-        {category.image ? (
-          // Remote category images are decorative; the category name remains the accessible label.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="bubble__image" src={category.image} alt="" />
-        ) : (
-          categoryIcon(category.id, category.name)
-        )}
-      </span>
-      <span className="bubble__name">{category.name}</span>
+        <span className="bubble__icon" aria-hidden="true">
+          {category.image ? (
+            // Remote category images are decorative; the category name remains the accessible label.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="bubble__image" src={category.image} alt="" />
+          ) : (
+            categoryIcon(category.id, category.name)
+          )}
+        </span>
+        <span className="bubble__name">{category.name}</span>
+        <span className="bubble__count" aria-hidden="true">
+          {dict.sheet.itemsCountLabel(category.itemCount)}
+        </span>
       </Link>
     </div>
   );
 }
+
+const DRAG_HINT_KEY = "faza:drag-hint-seen";
+
+/** No subscriptions: the snapshot is re-read whenever the component re-renders. */
+const subscribeToDragHint = () => () => {};
+
+const dragHintSnapshot = () => {
+  try {
+    return window.localStorage.getItem(DRAG_HINT_KEY) === "1";
+  } catch {
+    // Storage unavailable (private mode) — never show the hint.
+    return true;
+  }
+};
+
+const markDragHintSeen = () => {
+  try {
+    window.localStorage.setItem(DRAG_HINT_KEY, "1");
+  } catch {
+    // Storage unavailable — nothing to persist.
+  }
+};
 
 interface CategoryBubblesProps {
   /** Public slug of the coffee the categories belong to. */
@@ -124,9 +151,9 @@ interface CategoryBubblesProps {
 export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps) {
   const dict = getDictionary();
   const rows = layoutBubbleRows(categories);
-  const [positions, setPositions] = useState<
-    Record<string, { x: number; y: number; width: number; height: number }>
-  >({});
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number; width: number; height: number }>>(
+    {},
+  );
   const dragRef = useRef<{
     id: string;
     pointerId: number;
@@ -145,6 +172,8 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
   const suppressClickRef = useRef(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hasDragged, setHasDragged] = useState(false);
+  // One-time drag hint: shown until the visitor drags a bubble for the first time.
+  const hintSeen = useSyncExternalStore(subscribeToDragHint, dragHintSnapshot, () => false);
   const [lastTouchedId, setLastTouchedId] = useState<string | null>(null);
   const [pressedId, setPressedId] = useState<string | null>(null);
   const getScene = (event: PointerEvent<HTMLAnchorElement>) => {
@@ -201,6 +230,7 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
           },
         }));
         setHasDragged(true);
+        markDragHintSeen();
       }
       drag.moved = true;
       suppressClickRef.current = true;
@@ -252,24 +282,29 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     >
       {rows.map((row, rowIndex) => (
         <div key={rowIndex} className={`bubble-row bubble-row--${row.length}`}>
-        {row.map((category, categoryIndex) => (
-          <CategoryLink
-            key={category.id}
-            coffeeSlug={coffeeSlug}
-            category={category}
-            visualIndex={rowIndex * 3 + categoryIndex}
-            position={positions[category.id]}
-            onDragStart={(event) => handleDragStart(category.id, event)}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            onClick={handleClick}
-            dragging={draggingId === category.id}
-            isLastTouched={lastTouchedId === category.id}
-            pressed={pressedId === category.id}
-          />
-        ))}
+          {row.map((category, categoryIndex) => (
+            <CategoryLink
+              key={category.id}
+              coffeeSlug={coffeeSlug}
+              category={category}
+              visualIndex={rowIndex * 3 + categoryIndex}
+              position={positions[category.id]}
+              onDragStart={(event) => handleDragStart(category.id, event)}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+              onClick={handleClick}
+              dragging={draggingId === category.id}
+              isLastTouched={lastTouchedId === category.id}
+              pressed={pressedId === category.id}
+            />
+          ))}
         </div>
       ))}
+      {!hintSeen ? (
+        <p className="bubble-hint" role="note">
+          {dict.explore.dragHint}
+        </p>
+      ) : null}
     </nav>
   );
 }

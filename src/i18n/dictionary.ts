@@ -1,12 +1,37 @@
 export interface Dictionary {
   order: {
-    addToCart: string; openCart: string; closeCart: string; cartTitle: string;
-    decrease: string; increase: string; total: string; tableNumber: string; tablePlaceholder: string; addedToCart: string; viewOrder: string;
-    submit: string; submitting: string; invalidCheckout: string; submitError: string; sessionInProgress: string; sessionExpired: string;
-    confirmationTitle: string; confirmationMessage: string; status: string; statusPending: string;
-    statusConfirmed: string; statusRejected: string; statusReady: string; statusCompleted: string;
-    paymentUnpaid: string; paymentPaid: string;
-    refresh: string; orderNotFound: string;
+    addToCart: string;
+    openCart: string;
+    closeCart: string;
+    cartTitle: string;
+    viewCart: string;
+    clearCart: string;
+    decrease: string;
+    increase: string;
+    total: string;
+    tableNumber: string;
+    tablePlaceholder: string;
+    addedToCart: string;
+    viewOrder: string;
+    submit: string;
+    submitting: string;
+    invalidCheckout: string;
+    submitError: string;
+    sessionInProgress: string;
+    sessionExpired: string;
+    itemAddedAnnounce: (name: string) => string;
+    confirmationTitle: string;
+    confirmationMessage: string;
+    status: string;
+    statusPending: string;
+    statusConfirmed: string;
+    statusRejected: string;
+    statusReady: string;
+    statusCompleted: string;
+    paymentUnpaid: string;
+    paymentPaid: string;
+    refresh: string;
+    orderNotFound: string;
   };
   landing: {
     eyebrow: string;
@@ -19,6 +44,8 @@ export interface Dictionary {
     categoriesLabel: (count: number) => string;
     itemsLabel: (count: number) => string;
     categoriesAriaLabel: string;
+    openCategory: string;
+    dragHint: string;
     emptyTitle: string;
     emptyMessage: string;
   };
@@ -28,6 +55,8 @@ export interface Dictionary {
     dialogAriaLabel: (name: string) => string;
     emptyTitle: string;
     emptyMessage: string;
+    emptyCta: string;
+    categoriesNavLabel: string;
     errorTitle: string;
     errorMessage: string;
     retryLabel: string;

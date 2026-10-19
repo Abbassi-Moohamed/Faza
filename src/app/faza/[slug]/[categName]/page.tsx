@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BackLink } from "@/components/layout/BackLink";
 import { OrderExperience } from "@/components/ordering/OrderExperience";
 import { getDictionary } from "@/i18n";
-import { toMenuItem } from "@/lib/adapters";
+import { categoryIcon, toMenuItem } from "@/lib/adapters";
 import { ApiClientError, getCoffeeBySlug, getItemsByCategoryId } from "@/lib/api";
 import { resolvePublicCoffee } from "@/lib/public-coffee";
-import { slugify } from "@/lib/utils";
+import { categoryHref, slugify } from "@/lib/utils";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string; categName: string }>;
@@ -61,12 +62,36 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <main id="main">
       <section className="category-page">
-        <div className="container category-page__header">
-          <BackLink className="category-page__back" href={`/faza/${slug}`} label={dict.sheet.backLabel} />
-          <div className="category-page__heading">
-            <h1 className="category-page__title">{category.name}</h1>
-            <p className="category-page__count">{dict.sheet.itemsCountLabel(menuItems.length)}</p>
+        <div className="category-page__sticky">
+          <div className="container category-page__header">
+            <BackLink className="category-page__back" href={`/faza/${slug}`} label={dict.sheet.backLabel} />
+            <div className="category-page__heading">
+              <h1 className="category-page__title">{category.name}</h1>
+              <p className="category-page__count">{dict.sheet.itemsCountLabel(menuItems.length)}</p>
+            </div>
           </div>
+          <nav className="category-chips" aria-label={dict.sheet.categoriesNavLabel}>
+            <div className="category-chips__track">
+              {coffee.categories.map((sibling) => {
+                const glyph = (
+                  <span className="category-chip__icon" aria-hidden="true">
+                    {categoryIcon(sibling.id, sibling.name)}
+                  </span>
+                );
+                return sibling.id === category.id ? (
+                  <span key={sibling.id} className="category-chip category-chip--active" aria-current="page">
+                    {glyph}
+                    {sibling.name}
+                  </span>
+                ) : (
+                  <Link key={sibling.id} href={categoryHref(slug, sibling.name)} className="category-chip">
+                    {glyph}
+                    {sibling.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
         </div>
 
         {menuItems.length > 0 ? (
@@ -76,6 +101,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <div className="sheet-state">
               <p className="sheet-state__title">{dict.sheet.emptyTitle}</p>
               <p className="sheet-state__text">{dict.sheet.emptyMessage}</p>
+              <Link className="notice-page__cta" href={`/faza/${slug}`}>
+                {dict.sheet.emptyCta}
+              </Link>
             </div>
           </div>
         )}
