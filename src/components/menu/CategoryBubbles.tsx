@@ -148,7 +148,6 @@ interface Gesture {
   startX: number;
   startY: number;
   lastY: number;
-  lastT: number;
   grabX: number;
   grabY: number;
   sceneLeft: number;
@@ -158,12 +157,17 @@ interface Gesture {
   bubbleWidth: number;
   bubbleHeight: number;
   moved: boolean;
-  scrollTarget: HTMLElement | null;
 }
 
 const DRAG_ARM_DELAY = 220;
 const MOVE_SLOP = 6;
 const SCROLL_SLOP = 8;
+/** Window used to estimate the fling velocity at pointer release. */
+const VELOCITY_WINDOW = 120;
+/** Exponential decay constant of the momentum scroll, in milliseconds. */
+const MOMENTUM_DECAY = 325;
+/** Clamp so an aggressive flick cannot fling the menu across several screens. */
+const MAX_FLING_SPEED = 6;
 
 /**
  * Nearest ancestor that actually scrolls vertically. Returns `null` when the
@@ -181,14 +185,16 @@ function findScrollTarget(start: Element | null): HTMLElement | null {
   return null;
 }
 
-/** Scroll the document or a container without triggering smooth-scroll. */
+/**
+ * Scroll the document or a container without triggering smooth-scroll.
+ * `behavior: "instant"` is required: the app sets `scroll-behavior: smooth`,
+ * which otherwise animates every assignment, so successive pan updates fight
+ * the animation and the scroll trails far behind the finger.
+ */
 function scrollByY(target: HTMLElement | null, delta: number) {
-  if (target) {
-    target.scrollTop += delta;
-    return;
-  }
-  const scroller = document.scrollingElement ?? document.documentElement;
-  scroller.scrollTop += delta;
+  if (delta === 0) return;
+  const scroller = target ?? document.scrollingElement ?? document.documentElement;
+  scroller.scrollTo({ top: scroller.scrollTop + delta, behavior: "instant" });
 }
 
 function currentScrollTop(target: HTMLElement | null) {
@@ -217,7 +223,10 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
   const gestureRef = useRef<Gesture | null>(null);
   const armTimerRef = useRef<number | null>(null);
   const inertiaRef = useRef<number | null>(null);
-  const velocityRef = useRef(0);
+  const scrollFrameRef = useRef<number | null>(null);
+  const scrollTargetRef = useRef<HTMLElement | null>(null);
+  const pendingScrollRef = useRef(0);
+  const velocitySamplesRef = useRef<Array<{ t: number; y: number }>>([]);
   const suppressClickRef = useRef(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hasDragged, setHasDragged] = useState(false);
@@ -240,20 +249,66 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     }
   };
 
+  const cancelScrollFrame = () => {
+    if (scrollFrameRef.current !== null) {
+      window.cancelAnimationFrame(scrollFrameRef.current);
+      scrollFrameRef.current = null;
+    }
+  };
+
+  /** Apply any pan delta that is still waiting for the next animation frame. */
+  const flushScroll = () => {
+    cancelScrollFrame();
+    const delta = pendingScrollRef.current;
+    pendingScrollRef.current = 0;
+    scrollByY(scrollTargetRef.current, delta);
+  };
+
+  /**
+   * Coalesce pan deltas into one scroll write per frame. Touchscreens report
+   * several input samples per frame; batching avoids layout thrash and keeps
+   * the page locked to the finger across 60/90/120 Hz displays.
+   */
+  const queueScroll = (delta: number) => {
+    pendingScrollRef.current += delta;
+    if (scrollFrameRef.current !== null) return;
+    scrollFrameRef.current = window.requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const pending = pendingScrollRef.current;
+      pendingScrollRef.current = 0;
+      scrollByY(scrollTargetRef.current, pending);
+    });
+  };
+
+  /** Finger velocity over the last few samples, in px/ms, positive downwards. */
+  const releaseVelocity = (at: number) => {
+    const samples = velocitySamplesRef.current;
+    const last = samples[samples.length - 1];
+    if (!last || at - last.t > VELOCITY_WINDOW) {
+      // The finger rested before lifting: no fling.
+      return 0;
+    }
+    const oldest = samples.find((sample) => sample.t >= at - VELOCITY_WINDOW) ?? last;
+    const elapsed = last.t - oldest.t;
+    if (elapsed <= 0) return 0;
+    return (oldest.y - last.y) / elapsed;
+  };
+
   useEffect(
     () => () => {
       if (armTimerRef.current !== null) window.clearTimeout(armTimerRef.current);
       if (inertiaRef.current !== null) window.cancelAnimationFrame(inertiaRef.current);
+      if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
     },
     [],
   );
 
   /** Momentum scroll so a swipe that starts on a bubble still feels native. */
-  const startInertia = (target: HTMLElement | null) => {
+  const startInertia = (at: number) => {
     stopInertia();
-    if (Math.abs(velocityRef.current) < 0.02) {
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let velocity = Math.max(-MAX_FLING_SPEED, Math.min(MAX_FLING_SPEED, releaseVelocity(at)));
+    if (Math.abs(velocity) < 0.05) return;
     let last: number | null = null;
     const step = (now: number) => {
       if (last === null) {
@@ -263,12 +318,11 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       }
       const dt = Math.min(now - last, 50);
       last = now;
-      const before = currentScrollTop(target);
-      scrollByY(target, velocityRef.current * dt);
-      const after = currentScrollTop(target);
-      velocityRef.current *= Math.pow(0.94, dt / 16.67);
-      const hitBoundary = after === before;
-      if (Math.abs(velocityRef.current) < 0.02 || hitBoundary) {
+      const before = currentScrollTop(scrollTargetRef.current);
+      scrollByY(scrollTargetRef.current, velocity * dt);
+      const after = currentScrollTop(scrollTargetRef.current);
+      velocity *= Math.exp(-dt / MOMENTUM_DECAY);
+      if (after === before || Math.abs(velocity) < 0.02) {
         inertiaRef.current = null;
         return;
       }
@@ -303,8 +357,10 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     const scene = getScene(event);
     if (!scene) return;
     stopInertia();
+    flushScroll();
     clearArmTimer();
     suppressClickRef.current = false;
+    velocitySamplesRef.current = [];
     setLastTouchedId(id);
     setPressedId(id);
     const bubble = event.currentTarget.getBoundingClientRect();
@@ -316,7 +372,6 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       startX: event.clientX,
       startY: event.clientY,
       lastY: event.clientY,
-      lastT: event.timeStamp,
       grabX: event.clientX - bubble.left,
       grabY: event.clientY - bubble.top,
       sceneLeft: scene.bounds.left,
@@ -326,7 +381,6 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       bubbleWidth: bubble.width,
       bubbleHeight: bubble.height,
       moved: false,
-      scrollTarget: null,
     };
     gestureRef.current = gesture;
     if (isTouch) {
@@ -349,30 +403,33 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       const distance = Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY);
       if (distance <= SCROLL_SLOP) {
         gesture.lastY = event.clientY;
-        gesture.lastT = event.timeStamp;
         return;
       }
       // Intent is a scroll: take over panning manually so the gesture keeps
       // working even though the bubble layer blocks native touch-action.
       clearArmTimer();
       gesture.phase = "scroll";
-      gesture.scrollTarget = findScrollTarget(event.currentTarget);
-      gesture.lastY = event.clientY;
-      gesture.lastT = event.timeStamp;
+      scrollTargetRef.current = findScrollTarget(event.currentTarget);
+      velocitySamplesRef.current = [];
       setPressedId(null);
     }
 
     if (gesture.phase === "scroll") {
-      const now = event.timeStamp;
-      const dy = event.clientY - gesture.lastY;
-      const dt = now - gesture.lastT;
-      scrollByY(gesture.scrollTarget, -dy);
-      if (dt > 0) {
-        const instantaneous = -dy / dt;
-        velocityRef.current = velocityRef.current * 0.7 + instantaneous * 0.3;
+      // Pointer events are coalesced by the browser; using the newest sample
+      // of each batch keeps panning perfectly in sync with the finger.
+      const coalesced = event.nativeEvent.getCoalescedEvents?.() ?? [];
+      const points = coalesced.length > 0 ? coalesced : [event.nativeEvent];
+      const latest = points[points.length - 1];
+      const samples = velocitySamplesRef.current;
+      for (const point of points) {
+        samples.push({ t: point.timeStamp, y: point.clientY });
       }
-      gesture.lastY = event.clientY;
-      gesture.lastT = now;
+      const cutoff = latest.timeStamp - VELOCITY_WINDOW;
+      while (samples.length > 0 && samples[0].t < cutoff) {
+        samples.shift();
+      }
+      queueScroll(gesture.lastY - latest.clientY);
+      gesture.lastY = latest.clientY;
       return;
     }
 
@@ -418,7 +475,8 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     setDraggingId(null);
     setPressedId(null);
     if (wasScrolling) {
-      startInertia(gesture.scrollTarget);
+      flushScroll();
+      startInertia(event.timeStamp);
     } else if (!gesture.moved) {
       // A press that never turned into a drag still behaves as a tap.
       suppressClickRef.current = false;
