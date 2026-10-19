@@ -8,6 +8,7 @@
   --color-espresso-800: #2a1e13;
   --color-espresso-700: #3b2a1b;
   --color-espresso-600: #4b3523;
+  --color-mocha-700: #5d4730;
   --color-mocha-500: #6f5236;
   --color-mocha-400: #8a6a49;
 
@@ -1523,7 +1524,7 @@ img {
 .item-card__promotion {
   position: relative;
   z-index: 2;
-  align-self: flex-start;
+  align-self: flex-end;
   margin: 0.7rem 0.75rem -0.15rem;
   padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
@@ -1534,11 +1535,33 @@ img {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  /* Scale from the inner edge so the pulse grows leftwards, away from the
+     card corner, and never clips against the card's rounded border. */
+  transform-origin: 100% 50%;
+  animation: item-card-promo-pulse 2s ease-in-out infinite;
 }
 
+@keyframes item-card-promo-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+/* The visitor is already looking at this card; stop competing for attention. */
+.item-card:hover .item-card__promotion,
+.item-card:focus-within .item-card__promotion {
+  animation-play-state: paused;
+}
+
+/* Nothing to promote on an item that cannot be ordered. */
 .item-card--unavailable .item-card__promotion {
   background: var(--color-mocha-700);
   box-shadow: none;
+  animation: none;
 }
 
 .item-card__unavailable-overlay {
@@ -4434,7 +4457,8 @@ img {
 
 @media (prefers-reduced-motion: reduce) {
   .qty-stepper--pulse .qty-stepper__value,
-  .bubble-hint {
+  .bubble-hint,
+  .item-card__promotion {
     animation: none;
   }
   .cart-bar,
