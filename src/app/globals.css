@@ -18,9 +18,12 @@
 
   --color-green-700: #1d7a4b;
   --color-green-100: #dcefe2;
-  /* Promotion accent — one colour shared by the ticket surface and the
-     discounted price. Vivid by design, so the ticket's label is dark ink. */
+  /* Promotion accents, one yellow hue in two tones: `promo` is the ticket
+     surface (a colour this vivid can only carry dark ink, never cream) and
+     `promo-ink` is the same yellow darkened until it reads as text on the
+     cream card. */
   --color-promo: #edc001;
+  --color-promo-ink: #7d5f00;
 
   --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
   --font-body:
@@ -1654,8 +1657,10 @@ img {
   white-space: nowrap;
 }
 
+/* The new price is the same gold, darkened: the vivid ticket tone only works
+   on cream as a surface, never as text. */
 .item-card--promotion .item-card__price:not(.item-card__price--old) {
-  color: var(--color-promo);
+  color: var(--color-promo-ink);
   font-size: 1.08rem;
 }
 
