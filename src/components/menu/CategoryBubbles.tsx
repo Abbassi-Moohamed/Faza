@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, MouseEvent, PointerEvent } from "react";
-import { useSyncExternalStore, useRef, useState } from "react";
+import { useSyncExternalStore, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { getDictionary } from "@/i18n";
@@ -92,6 +92,7 @@ function CategoryLink({
         style={style}
         aria-label={`${category.name}, ${dict.sheet.itemsCountLabel(category.itemCount)} — ${dict.explore.openCategory}`}
         title={dict.explore.dragHint}
+        draggable={false}
         onPointerDown={onDragStart}
         onPointerMove={onDragMove}
         onPointerUp={onDragEnd}
@@ -102,7 +103,7 @@ function CategoryLink({
           {category.image ? (
             // Remote category images are decorative; the category name remains the accessible label.
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="bubble__image" src={category.image} alt="" />
+            <img className="bubble__image" src={category.image} alt="" draggable={false} />
           ) : (
             categoryIcon(category.id, category.name)
           )}
@@ -138,6 +139,65 @@ const markDragHintSeen = () => {
   }
 };
 
+type GesturePhase = "pending" | "scroll" | "drag";
+
+interface Gesture {
+  id: string;
+  pointerId: number;
+  phase: GesturePhase;
+  startX: number;
+  startY: number;
+  lastY: number;
+  lastT: number;
+  grabX: number;
+  grabY: number;
+  sceneLeft: number;
+  sceneTop: number;
+  sceneWidth: number;
+  sceneHeight: number;
+  bubbleWidth: number;
+  bubbleHeight: number;
+  moved: boolean;
+  scrollTarget: HTMLElement | null;
+}
+
+const DRAG_ARM_DELAY = 220;
+const MOVE_SLOP = 6;
+const SCROLL_SLOP = 8;
+
+/**
+ * Nearest ancestor that actually scrolls vertically. Returns `null` when the
+ * document itself scrolls, so callers fall back to the window.
+ */
+function findScrollTarget(start: Element | null): HTMLElement | null {
+  let node = start?.parentElement ?? null;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const { overflowY } = window.getComputedStyle(node);
+    if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+/** Scroll the document or a container without triggering smooth-scroll. */
+function scrollByY(target: HTMLElement | null, delta: number) {
+  if (target) {
+    target.scrollTop += delta;
+    return;
+  }
+  const scroller = document.scrollingElement ?? document.documentElement;
+  scroller.scrollTop += delta;
+}
+
+function currentScrollTop(target: HTMLElement | null) {
+  if (target) {
+    return target.scrollTop;
+  }
+  return (document.scrollingElement ?? document.documentElement).scrollTop;
+}
+
 interface CategoryBubblesProps {
   /** Public slug of the coffee the categories belong to. */
   coffeeSlug: string;
@@ -154,21 +214,10 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; width: number; height: number }>>(
     {},
   );
-  const dragRef = useRef<{
-    id: string;
-    pointerId: number;
-    startX: number;
-    startY: number;
-    grabX: number;
-    grabY: number;
-    sceneLeft: number;
-    sceneTop: number;
-    sceneWidth: number;
-    sceneHeight: number;
-    bubbleWidth: number;
-    bubbleHeight: number;
-    moved: boolean;
-  } | null>(null);
+  const gestureRef = useRef<Gesture | null>(null);
+  const armTimerRef = useRef<number | null>(null);
+  const inertiaRef = useRef<number | null>(null);
+  const velocityRef = useRef(0);
   const suppressClickRef = useRef(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hasDragged, setHasDragged] = useState(false);
@@ -176,6 +225,58 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
   const hintSeen = useSyncExternalStore(subscribeToDragHint, dragHintSnapshot, () => false);
   const [lastTouchedId, setLastTouchedId] = useState<string | null>(null);
   const [pressedId, setPressedId] = useState<string | null>(null);
+
+  const clearArmTimer = () => {
+    if (armTimerRef.current !== null) {
+      window.clearTimeout(armTimerRef.current);
+      armTimerRef.current = null;
+    }
+  };
+
+  const stopInertia = () => {
+    if (inertiaRef.current !== null) {
+      window.cancelAnimationFrame(inertiaRef.current);
+      inertiaRef.current = null;
+    }
+  };
+
+  useEffect(
+    () => () => {
+      if (armTimerRef.current !== null) window.clearTimeout(armTimerRef.current);
+      if (inertiaRef.current !== null) window.cancelAnimationFrame(inertiaRef.current);
+    },
+    [],
+  );
+
+  /** Momentum scroll so a swipe that starts on a bubble still feels native. */
+  const startInertia = (target: HTMLElement | null) => {
+    stopInertia();
+    if (Math.abs(velocityRef.current) < 0.02) {
+      return;
+    }
+    let last: number | null = null;
+    const step = (now: number) => {
+      if (last === null) {
+        last = now;
+        inertiaRef.current = window.requestAnimationFrame(step);
+        return;
+      }
+      const dt = Math.min(now - last, 50);
+      last = now;
+      const before = currentScrollTop(target);
+      scrollByY(target, velocityRef.current * dt);
+      const after = currentScrollTop(target);
+      velocityRef.current *= Math.pow(0.94, dt / 16.67);
+      const hitBoundary = after === before;
+      if (Math.abs(velocityRef.current) < 0.02 || hitBoundary) {
+        inertiaRef.current = null;
+        return;
+      }
+      inertiaRef.current = window.requestAnimationFrame(step);
+    };
+    inertiaRef.current = window.requestAnimationFrame(step);
+  };
+
   const getScene = (event: PointerEvent<HTMLAnchorElement>) => {
     const scene = event.currentTarget.closest(".bubble-field");
     if (!scene || typeof window === "undefined") {
@@ -186,19 +287,36 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
     return { element: scene, bounds };
   };
 
+  const armDrag = (gesture: Gesture) => {
+    if (gestureRef.current !== gesture || gesture.phase !== "pending") {
+      return;
+    }
+    gesture.phase = "drag";
+    setDraggingId(gesture.id);
+    setPressedId(null);
+    suppressClickRef.current = true;
+  };
+
   const handleDragStart = (id: string, event: PointerEvent<HTMLAnchorElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    if (gestureRef.current) return;
     const scene = getScene(event);
     if (!scene) return;
+    stopInertia();
+    clearArmTimer();
     suppressClickRef.current = false;
     setLastTouchedId(id);
     setPressedId(id);
     const bubble = event.currentTarget.getBoundingClientRect();
-    dragRef.current = {
+    const isTouch = event.pointerType === "touch";
+    const gesture: Gesture = {
       id,
       pointerId: event.pointerId,
+      phase: isTouch ? "pending" : "drag",
       startX: event.clientX,
       startY: event.clientY,
+      lastY: event.clientY,
+      lastT: event.timeStamp,
       grabX: event.clientX - bubble.left,
       grabY: event.clientY - bubble.top,
       sceneLeft: scene.bounds.left,
@@ -208,52 +326,102 @@ export function CategoryBubbles({ coffeeSlug, categories }: CategoryBubblesProps
       bubbleWidth: bubble.width,
       bubbleHeight: bubble.height,
       moved: false,
+      scrollTarget: null,
     };
-    setDraggingId(id);
-    event.currentTarget.setPointerCapture(event.pointerId);
+    gestureRef.current = gesture;
+    if (isTouch) {
+      armTimerRef.current = window.setTimeout(() => armDrag(gesture), DRAG_ARM_DELAY);
+    } else {
+      setDraggingId(id);
+    }
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Capture is best-effort; touch pointers are implicitly captured anyway.
+    }
   };
 
   const handleDragMove = (event: PointerEvent<HTMLAnchorElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const nextX = event.clientX - drag.sceneLeft - drag.grabX;
-    const nextY = event.clientY - drag.sceneTop - drag.grabY;
-    if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 6) {
-      if (!drag.moved) {
+    const gesture = gestureRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+
+    if (gesture.phase === "pending") {
+      const distance = Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY);
+      if (distance <= SCROLL_SLOP) {
+        gesture.lastY = event.clientY;
+        gesture.lastT = event.timeStamp;
+        return;
+      }
+      // Intent is a scroll: take over panning manually so the gesture keeps
+      // working even though the bubble layer blocks native touch-action.
+      clearArmTimer();
+      gesture.phase = "scroll";
+      gesture.scrollTarget = findScrollTarget(event.currentTarget);
+      gesture.lastY = event.clientY;
+      gesture.lastT = event.timeStamp;
+      setPressedId(null);
+    }
+
+    if (gesture.phase === "scroll") {
+      const now = event.timeStamp;
+      const dy = event.clientY - gesture.lastY;
+      const dt = now - gesture.lastT;
+      scrollByY(gesture.scrollTarget, -dy);
+      if (dt > 0) {
+        const instantaneous = -dy / dt;
+        velocityRef.current = velocityRef.current * 0.7 + instantaneous * 0.3;
+      }
+      gesture.lastY = event.clientY;
+      gesture.lastT = now;
+      return;
+    }
+
+    const nextX = event.clientX - gesture.sceneLeft - gesture.grabX;
+    const nextY = event.clientY - gesture.sceneTop - gesture.grabY;
+    if (Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY) > MOVE_SLOP) {
+      if (!gesture.moved) {
         setPositions((current) => ({
           ...current,
-          [drag.id]: {
-            x: drag.startX - drag.sceneLeft - drag.grabX,
-            y: drag.startY - drag.sceneTop - drag.grabY,
-            width: drag.bubbleWidth,
-            height: drag.bubbleHeight,
+          [gesture.id]: {
+            x: gesture.startX - gesture.sceneLeft - gesture.grabX,
+            y: gesture.startY - gesture.sceneTop - gesture.grabY,
+            width: gesture.bubbleWidth,
+            height: gesture.bubbleHeight,
           },
         }));
         setHasDragged(true);
         markDragHintSeen();
       }
-      drag.moved = true;
+      gesture.moved = true;
       suppressClickRef.current = true;
     }
-    if (!drag.moved) return;
-    const maxX = Math.max(0, drag.sceneWidth - drag.bubbleWidth);
-    const maxY = Math.max(0, drag.sceneHeight - drag.bubbleHeight);
+    if (!gesture.moved) return;
+    const maxX = Math.max(0, gesture.sceneWidth - gesture.bubbleWidth);
+    const maxY = Math.max(0, gesture.sceneHeight - gesture.bubbleHeight);
     setPositions((current) => ({
       ...current,
-      [drag.id]: {
+      [gesture.id]: {
         x: Math.max(0, Math.min(maxX, nextX)),
         y: Math.max(0, Math.min(maxY, nextY)),
-        width: drag.bubbleWidth,
-        height: drag.bubbleHeight,
+        width: gesture.bubbleWidth,
+        height: gesture.bubbleHeight,
       },
     }));
   };
 
   const handleDragEnd = (event: PointerEvent<HTMLAnchorElement>) => {
-    if (dragRef.current?.pointerId === event.pointerId) {
-      dragRef.current = null;
-      setDraggingId(null);
-      setPressedId(null);
+    const gesture = gestureRef.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    clearArmTimer();
+    const wasScrolling = gesture.phase === "scroll";
+    gestureRef.current = null;
+    setDraggingId(null);
+    setPressedId(null);
+    if (wasScrolling) {
+      startInertia(gesture.scrollTarget);
+    } else if (!gesture.moved) {
+      // A press that never turned into a drag still behaves as a tap.
+      suppressClickRef.current = false;
     }
   };
 

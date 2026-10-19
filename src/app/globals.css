@@ -445,7 +445,7 @@ img {
   max-width: 30rem;
   box-sizing: border-box;
   margin: 3rem auto 0;
-  padding: 0.25rem 1.125rem 2rem;
+  padding: 0.25rem 1.5rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -545,10 +545,6 @@ img {
   height: 100%;
 }
 
-.bubble-drag-layer {
-  margin-inline: -0.18rem;
-}
-
 .bubble-row--1 {
   justify-content: center;
 }
@@ -596,6 +592,9 @@ img {
   text-align: center;
   border: 5px solid color-mix(in srgb, var(--bubble-border, #ffffff) 86%, white);
   background: linear-gradient(150deg, var(--art-from) 0%, var(--art-to) 100%);
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-drag: none;
   box-shadow:
     var(--shadow-pop),
     0 0 0 2px color-mix(in srgb, var(--bubble-border, #ffffff) 48%, transparent),
@@ -666,6 +665,7 @@ img {
   height: 2.6rem;
   border-radius: 999px;
   object-fit: cover;
+  -webkit-user-drag: none;
   box-shadow: 0 0 0 2px rgb(255 255 255 / 0.55);
 }
 
@@ -731,40 +731,40 @@ img {
   .bubble {
     animation: none;
   }
+}
 
-  @media (max-width: 30rem) {
-    .bubble-field {
-      padding-inline: 0.75rem;
-    }
+@media (max-width: 30rem) {
+  .bubble-field {
+    padding-inline: 1.25rem;
+  }
 
-    .bubble-row {
-      gap: 0.5rem;
-    }
+  .bubble-row {
+    gap: 0.5rem;
+  }
 
-    .bubble-row--1 .bubble,
-    .bubble-row--1 .bubble-drag-layer {
-      flex-basis: clamp(9rem, 58vw, 12rem);
-    }
+  .bubble-row--1 .bubble,
+  .bubble-row--1 .bubble-drag-layer {
+    flex-basis: clamp(9rem, 58vw, 12rem);
+  }
 
-    .bubble-row--2 .bubble,
-    .bubble-row--2 .bubble-drag-layer {
-      flex-basis: clamp(7.25rem, 42vw, 10rem);
-    }
+  .bubble-row--2 .bubble,
+  .bubble-row--2 .bubble-drag-layer {
+    flex-basis: clamp(7.25rem, 42vw, 10rem);
+  }
 
-    .bubble-row--3 .bubble,
-    .bubble-row--3 .bubble-drag-layer {
-      flex-basis: clamp(5.75rem, 29vw, 8rem);
-    }
+  .bubble-row--3 .bubble,
+  .bubble-row--3 .bubble-drag-layer {
+    flex-basis: clamp(5.75rem, 29vw, 8rem);
+  }
 
-    .bubble {
-      height: 100%;
-      max-height: 8.5rem;
-      padding-inline: 0.5rem;
-    }
+  .bubble {
+    height: 100%;
+    max-height: 8.5rem;
+    padding-inline: 0.5rem;
+  }
 
-    .bubble__name {
-      font-size: 0.92rem;
-    }
+  .bubble__name {
+    font-size: 0.92rem;
   }
 }
 
