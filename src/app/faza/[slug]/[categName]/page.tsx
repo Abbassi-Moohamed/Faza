@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BackLink } from "@/components/layout/BackLink";
+import { CategoryChipsRail } from "@/components/menu/CategoryChipsRail";
 import { OrderExperience } from "@/components/ordering/OrderExperience";
 import { getDictionary } from "@/i18n";
 import { categoryIcon, toMenuItem } from "@/lib/adapters";
@@ -70,28 +71,26 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               <p className="category-page__count">{dict.sheet.itemsCountLabel(menuItems.length)}</p>
             </div>
           </div>
-          <nav className="category-chips" aria-label={dict.sheet.categoriesNavLabel}>
-            <div className="category-chips__track">
-              {coffee.categories.map((sibling) => {
-                const glyph = (
-                  <span className="category-chip__icon" aria-hidden="true">
-                    {categoryIcon(sibling.id, sibling.name)}
-                  </span>
-                );
-                return sibling.id === category.id ? (
-                  <span key={sibling.id} className="category-chip category-chip--active" aria-current="page">
-                    {glyph}
-                    {sibling.name}
-                  </span>
-                ) : (
-                  <Link key={sibling.id} href={categoryHref(slug, sibling.name)} className="category-chip">
-                    {glyph}
-                    {sibling.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
+          <CategoryChipsRail ariaLabel={dict.sheet.categoriesNavLabel}>
+            {coffee.categories.map((sibling) => {
+              const glyph = (
+                <span className="category-chip__icon" aria-hidden="true">
+                  {categoryIcon(sibling.id, sibling.name)}
+                </span>
+              );
+              return sibling.id === category.id ? (
+                <span key={sibling.id} className="category-chip category-chip--active" aria-current="page">
+                  {glyph}
+                  {sibling.name}
+                </span>
+              ) : (
+                <Link key={sibling.id} href={categoryHref(slug, sibling.name)} className="category-chip">
+                  {glyph}
+                  {sibling.name}
+                </Link>
+              );
+            })}
+          </CategoryChipsRail>
         </div>
 
         {menuItems.length > 0 ? (
