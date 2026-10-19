@@ -18,12 +18,11 @@
 
   --color-green-700: #1d7a4b;
   --color-green-100: #dcefe2;
-  /* Promotion accents, one yellow hue in two tones: `promo` is the ticket
-     surface (a colour this vivid can only carry dark ink, never cream) and
-     `promo-ink` is the same yellow darkened until it reads as text on the
-     cream card. */
+  /* Promotion accents: `promo` is the vivid yellow of the ticket surface and
+     the promoted card's outline; `promo-price` is the softer yellow of the
+     discounted price. */
   --color-promo: #edc001;
-  --color-promo-ink: #7d5f00;
+  --color-promo-price: #ffee8c;
 
   --font-display: var(--font-fraunces), "Georgia", "Times New Roman", serif;
   --font-body:
@@ -1525,10 +1524,12 @@ img {
 }
 
 .item-card--promotion {
-  border: 2px solid color-mix(in srgb, var(--color-green-700) 72%, var(--color-line));
+  border: 2px solid var(--color-promo);
+  /* The halo follows the border: a leftover green glow under a gold outline
+     would read as a bug. */
   box-shadow:
     var(--shadow-card),
-    0 0 0 4px color-mix(in srgb, var(--color-green-100) 72%, transparent);
+    0 0 0 4px color-mix(in srgb, var(--color-promo) 32%, transparent);
 }
 
 .item-card--unavailable {
@@ -1657,10 +1658,8 @@ img {
   white-space: nowrap;
 }
 
-/* The new price is the same gold, darkened: the vivid ticket tone only works
-   on cream as a surface, never as text. */
 .item-card--promotion .item-card__price:not(.item-card__price--old) {
-  color: var(--color-promo-ink);
+  color: var(--color-promo-price);
   font-size: 1.08rem;
 }
 
