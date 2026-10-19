@@ -1014,8 +1014,15 @@ img {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
-  /* Room for the half of a promotion ticket that hangs above the card. */
-  padding-top: 0.5rem;
+}
+
+/**
+ * A promotion ticket hangs half a ticket above its card, so that row needs
+ * real headroom: without it the ticket tucks under the sticky header (which
+ * paints above it) or crowds the card above. Only promoted rows pay for it.
+ */
+.order-item:has(.item-card--promotion) {
+  padding-top: 1.5rem;
 }
 .order-item .add-btn {
   align-self: stretch;
