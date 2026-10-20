@@ -12,8 +12,11 @@ import { formatPrice } from "@/lib/menu";
 import { siteConfig } from "@/config/site";
 import type { MenuItem } from "@/types/menu";
 import { ItemArt } from "@/components/menu/ItemArt";
+import { CartBubble } from "@/components/ordering/CartBubble";
 
 const activeOrderKey = (coffeeSlug: string) => `faza:active-order:${coffeeSlug}`;
+/** Mirrors the cart sheet's closing keyframes in globals.css. */
+const CLOSE_ANIMATION_MS = 260;
 
 interface OrderCenterProps {
   coffeeSlug: string;
@@ -26,6 +29,9 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const closeTimerRef = useRef<number | null>(null);
   const [tableNumber, setTableNumber] = useState("");
   const [sessionState, setSessionState] = useState<ReturnType<typeof readTableSession>>(null);
   const [busy, setBusy] = useState(false);
@@ -48,11 +54,29 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
     return () => window.removeEventListener(cartEventName(), sync);
   }, [coffeeSlug]);
 
+  const closeDialog = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setClosing(true);
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = null;
+      closingRef.current = false;
+      setClosing(false);
+      setOpen(false);
+    }, CLOSE_ANIMATION_MS);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     panelRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closeDialog();
     };
     document.addEventListener("keydown", onKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -117,7 +141,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
       window.localStorage.setItem(activeOrderKey(coffeeSlug), order.id);
       setLines([]);
       setActiveOrderId(order.id);
-      setOpen(false);
+      closeDialog();
       router.push(`/faza/${coffeeSlug}/order/${order.id}`);
     } catch (e) {
       const status = e instanceof ApiClientError ? e.status : 0;
@@ -142,34 +166,23 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
 
   return (
     <>
-      {lines.length > 0 && !open ? (
-        <div className="cart-bar-wrap">
-          <button
-            className="cart-bar"
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label={`${d.order.openCart} · ${d.sheet.itemsCountLabel(count)} · ${total}`}
-          >
-            <span className="cart-bar__badge" key={count} aria-hidden="true">
-              {count}
-            </span>
-            <span className="cart-bar__label">{d.order.viewCart}</span>
-            <span className="cart-bar__total">{total}</span>
-            <span className="cart-bar__chevron" aria-hidden="true">
-              ›
-            </span>
-          </button>
-        </div>
+      {count > 0 ? (
+        <CartBubble
+          count={count}
+          label={`${d.order.openCart} · ${d.sheet.itemsCountLabel(count)} · ${total}`}
+          sheetOpen={open}
+          onOpen={() => setOpen(true)}
+        />
       ) : null}
 
       {open ? (
-        <div className="cart-dialog" role="dialog" aria-modal="true" aria-labelledby="cart-title">
-          <button
-            className="cart-dialog__scrim"
-            type="button"
-            aria-label={d.order.closeCart}
-            onClick={() => setOpen(false)}
-          />
+        <div
+          className={`cart-dialog${closing ? " cart-dialog--closing" : ""}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cart-title"
+        >
+          <button className="cart-dialog__scrim" type="button" aria-label={d.order.closeCart} onClick={closeDialog} />
           <section className="cart-dialog__panel" ref={panelRef} tabIndex={-1}>
             <div className="cart-dialog__body">
               <div className="cart-sheet__grip" aria-hidden="true" />
@@ -177,12 +190,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
                 <h2 id="cart-title" className="admin-head__title">
                   {d.order.cartTitle}
                 </h2>
-                <button
-                  className="sheet__back"
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label={d.order.closeCart}
-                >
+                <button className="sheet__back" type="button" onClick={closeDialog} aria-label={d.order.closeCart}>
                   ×
                 </button>
               </div>
