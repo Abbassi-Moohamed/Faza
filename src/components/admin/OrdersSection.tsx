@@ -14,7 +14,7 @@ import {
 } from "@/lib/api";
 import { listOrders, markOrderPaid, updateOrderStatus } from "@/lib/orders";
 import { getAdminRealtimeSocket } from "@/lib/realtime";
-import { groupSessionsByTable, sessionOutstanding, sessionPending, sessionRevenue } from "@/lib/admin-tables";
+import { groupSessionsByTable } from "@/lib/admin-tables";
 import type { OrderDto, OrderStatus, ServiceShiftDto, TablePaymentOrderDto, TableSessionDto } from "@/types/backend";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 
@@ -94,12 +94,12 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         getCurrentServiceShift(token),
         listTableSessions(token, { status: "ACTIVE" }),
         serviceView === "history"
-          ? listServiceShifts(token, "CLOSED", 1, historyRange === "all" ? 50 : 50)
+          ? listServiceShifts(token, "CLOSED", 1, 50)
           : Promise.resolve({ shifts: [], total: 0, page: 1, limit: 50 }),
       ]);
       if (generation !== serviceRefreshSequence) return;
       setCurrentShift(shift);
-      setSessions(list.sessions.filter((session) => session.status === "ACTIVE"));
+      setSessions(list.sessions);
       setHistory(historyResult.shifts.filter((item) => item.id !== shift?.id));
     } catch {
       if (generation !== serviceRefreshSequence) return;
@@ -107,7 +107,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       setSessions([]);
       setHistory([]);
     }
-  }, [token, serviceView, historyRange]);
+  }, [token, serviceView]);
 
   useEffect(() => {
     void loadOrders();
@@ -343,11 +343,11 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           status: "ACTIVE",
         });
         setServiceCloseTables(
-          refreshed.sessions.map((table) => ({
-            id: table.id,
-            tableNumber: table.tableNumber,
-            orders: table.orderCount,
-            revenue: 0,
+          refreshed.sessions.map((session) => ({
+            id: session.id,
+            tableNumber: session.tableNumber,
+            orders: session.totals?.totalOrders ?? session.orderCount,
+            revenue: session.totals?.confirmedRevenue ?? 0,
           })),
         );
         setReturnToServiceClose(false);
@@ -392,6 +392,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
 
   return (
     <section className="admin-section">
+      {error ? <p className="admin-form__error">{error}</p> : null}
       {section === "service" ? (
         <div className="service-view-toggle" role="tablist" aria-label="Service">
           <button
@@ -503,22 +504,15 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   {table.tableNumber}
                 </strong>
                 <span className="admin-status admin-status--pending">
-                  {table.orders.length} {serviceDict.tableSummary}
+                  {table.totals.orders} {serviceDict.tableSummary}
                 </span>
                 <span className="admin-table-group__sessions">
                   {table.entries.length} session{table.entries.length > 1 ? "s" : ""}
                 </span>
-                <strong className="admin-table-group__total">
-                  {table.orders.reduce((sum, order) => sum + order.total, 0).toFixed(3)} DT
-                </strong>
+                <strong className="admin-table-group__total">{table.totals.revenue.toFixed(3)} DT</strong>
               </div>
               {table.entries.map((entry) => {
-                const totalConfirmed = sessionRevenue(entry.orders);
-                const totalPaid = entry.orders
-                  .filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "PAID")
-                  .reduce((sum, order) => sum + order.total, 0);
-                const totalOutstanding = sessionOutstanding(entry.orders);
-                const totalPending = sessionPending(entry.orders);
+                const totals = entry.totals;
                 return (
                   <article className="order-admin-card order-admin-card--session" key={entry.session.id}>
                     <div className="order-admin-card__main">
@@ -528,19 +522,22 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                           {serviceDateTime(entry.session.openedAt, false)}
                         </strong>
                         <span className="admin-status admin-status--pending">
-                          {entry.orders.length} {serviceDict.tableSummary}
+                          {totals.orders} {serviceDict.tableSummary}
                         </span>
                       </div>
                       <div className="order-admin-card__items">
                         <div className="admin-payment-summary">
                           <span>
-                            Confirmé <strong>{totalConfirmed.toFixed(2)} DT</strong>
+                            Confirmé <strong>{totals.revenue.toFixed(2)} DT</strong>
                           </span>
                           <span>
-                            Payé <strong>{totalPaid.toFixed(2)} DT</strong>
+                            Payé <strong>{totals.paid.toFixed(2)} DT</strong>
                           </span>
                           <span>
-                            À payer <strong>{totalOutstanding.toFixed(2)} DT</strong>
+                            À payer <strong>{totals.outstanding.toFixed(2)} DT</strong>
+                          </span>
+                          <span>
+                            En attente <strong>{totals.pending.toFixed(2)} DT</strong>
                           </span>
                         </div>
                         {entry.orders.map((order) => (
@@ -554,18 +551,16 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       </div>
                     </div>
                     <div className="order-admin-card__side">
-                      <strong>{serviceDict.revenue(totalConfirmed + totalPending)}</strong>
+                      <strong>{serviceDict.revenue(totals.revenue)}</strong>
                       <div className="admin-form__actions">
-                        {entry.session.id.startsWith("table:") ? null : (
-                          <button
-                            type="button"
-                            className="admin-btn admin-btn--ghost"
-                            onClick={() => void handleCloseTable(entry.session.id)}
-                            disabled={closeTableBusy === entry.session.id}
-                          >
-                            {closeTableBusy === entry.session.id ? serviceDict.tableClosed : "Clôturer la session"}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--ghost"
+                          onClick={() => void handleCloseTable(entry.session.id)}
+                          disabled={closeTableBusy === entry.session.id}
+                        >
+                          {closeTableBusy === entry.session.id ? serviceDict.tableClosed : "Clôturer la session"}
+                        </button>
                       </div>
                     </div>
                   </article>
@@ -630,9 +625,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         </div>
       ) : null}
       {section === "orders" ? (
-        error ? (
-          <p className="admin-form__error">{error}</p>
-        ) : orders.length === 0 ? (
+        orders.length === 0 ? (
           <p className="sheet-state__text">{d.empty}</p>
         ) : (
           orders.map((order) => (

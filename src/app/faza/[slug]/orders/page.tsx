@@ -115,7 +115,10 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
     };
   }, [slug]);
 
-  const total = orders.reduce((sum, order) => sum + order.total, 0);
+  // A refused order is not billed: it stays visible in the list but it does
+  // not count in the bill of the table.
+  const billable = orders.filter((order) => order.status !== "REJECTED");
+  const total = billable.reduce((sum, order) => sum + order.total, 0);
   return (
     <main id="main">
       <section className="order-status container">
@@ -142,7 +145,7 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
                 <strong>{tableNumber ?? "—"}</strong>
               </div>
               <div className="orders-history__summary-item">
-                <span>{d.order.ordersCountLabel(orders.length)}</span>
+                <span>{d.order.ordersCountLabel(billable.length)}</span>
                 <strong>{formatPrice(total, siteConfig.currency, siteConfig.locale)}</strong>
               </div>
               {session ? (

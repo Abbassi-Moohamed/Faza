@@ -151,7 +151,10 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
       router.push(`/faza/${coffeeSlug}/order/${order.id}`);
     } catch (e) {
       const status = e instanceof ApiClientError ? e.status : 0;
-      if (status === 401 || status === 404 || status === 400) {
+      // Only an invalid session token means the table session is over: any
+      // other failure (invalid basket, unavailable item, unknown menu) must
+      // not throw the session — and its history — away.
+      if (status === 401) {
         resetSession();
         setError(
           d.order.sessionExpired ?? "Votre session de table est terminée. Vous pouvez commencer une nouvelle commande.",

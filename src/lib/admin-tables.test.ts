@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { groupSessionsByTable, sessionOutstanding, sessionPending, sessionRevenue } from "@/lib/admin-tables";
+import {
+  groupSessionsByTable,
+  sessionOutstanding,
+  sessionPaid,
+  sessionPending,
+  sessionRevenue,
+  sessionTotals,
+  totalsFromOrders,
+} from "@/lib/admin-tables";
 import type { OrderDto, TableSessionDto } from "@/types/backend";
 
 const order = (
@@ -30,6 +38,7 @@ const tableSession = (
   id: string,
   tableNumber: number,
   status: TableSessionDto["status"] = "ACTIVE",
+  totals?: TableSessionDto["totals"],
 ): TableSessionDto => ({
   id,
   coffeeId: "coffee-1",
@@ -40,6 +49,7 @@ const tableSession = (
   closedAt: null,
   lastOrderAt: "2026-01-01T10:00:00.000Z",
   orderCount: 0,
+  ...(totals ? { totals } : {}),
 });
 
 describe("admin table grouping", () => {
@@ -101,7 +111,72 @@ describe("admin table grouping", () => {
     ];
 
     expect(sessionRevenue(orders)).toBe(20);
+    expect(sessionPaid(orders)).toBe(12);
     expect(sessionOutstanding(orders)).toBe(8);
     expect(sessionPending(orders)).toBe(5);
+  });
+
+  it("rebuilds the bill of a session from the orders it knows", () => {
+    const totals = totalsFromOrders([
+      order("a", 7, "s1", "CONFIRMED", "PAID", 12),
+      order("b", 7, "s1", "PENDING", "UNPAID", 5),
+    ]);
+
+    expect(totals).toEqual({ orders: 2, revenue: 12, paid: 12, outstanding: 0, pending: 5 });
+  });
+
+  it("trusts the server-side totals over the local order list", () => {
+    const session = tableSession("s1", 7, "ACTIVE", {
+      totalOrders: 4,
+      confirmedOrders: 2,
+      pendingOrders: 1,
+      rejectedOrders: 1,
+      confirmedRevenue: 30,
+      paidRevenue: 10,
+      outstandingRevenue: 20,
+      pendingRevenue: 5,
+    });
+
+    // The backoffice only holds the newest order of the session.
+    const totals = sessionTotals(session, [order("a", 7, "s1", "CONFIRMED", "PAID", 12)]);
+
+    expect(totals).toEqual({ orders: 4, revenue: 30, paid: 10, outstanding: 20, pending: 5 });
+  });
+
+  it("falls back to the local orders when the server sends no totals", () => {
+    const totals = sessionTotals(tableSession("s1", 7), [order("a", 7, "s1", "CONFIRMED", "PAID", 12)]);
+
+    expect(totals).toEqual({ orders: 1, revenue: 12, paid: 12, outstanding: 0, pending: 0 });
+  });
+
+  it("sums the bills of the sessions of a table", () => {
+    const groups = groupSessionsByTable(
+      [order("a", 7, "s1", "CONFIRMED", "PAID", 12)],
+      [
+        tableSession("s1", 7, "ACTIVE", {
+          totalOrders: 1,
+          confirmedOrders: 1,
+          pendingOrders: 0,
+          rejectedOrders: 0,
+          confirmedRevenue: 12,
+          paidRevenue: 12,
+          outstandingRevenue: 0,
+          pendingRevenue: 0,
+        }),
+        tableSession("s2", 7, "ACTIVE", {
+          totalOrders: 3,
+          confirmedOrders: 1,
+          pendingOrders: 2,
+          rejectedOrders: 0,
+          confirmedRevenue: 8,
+          paidRevenue: 0,
+          outstandingRevenue: 8,
+          pendingRevenue: 6,
+        }),
+      ],
+    );
+
+    expect(groups[0].totals).toEqual({ orders: 4, revenue: 20, paid: 12, outstanding: 8, pending: 6 });
+    expect(groups[0].entries[1].totals.revenue).toBe(8);
   });
 });

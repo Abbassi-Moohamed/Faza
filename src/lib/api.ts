@@ -341,9 +341,12 @@ export function listTableSessions(
   if (options.status) params.set("status", options.status);
   if (options.page) params.set("page", String(options.page));
   if (options.limit) params.set("limit", String(options.limit));
-  return request<TableSessionListDto>(`/admin/my-coffee/table-sessions${params.size ? `?${params.toString()}` : ""}`, {
-    headers: authHeader(token),
-  });
+  return request<TableSessionListDto>(
+    `/admin/my-coffee/table-sessions${params.toString() ? `?${params.toString()}` : ""}`,
+    {
+      headers: authHeader(token),
+    },
+  );
 }
 
 /** GET /api/v1/admin/my-coffee/table-sessions/:sessionId */

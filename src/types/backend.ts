@@ -174,6 +174,18 @@ export interface TableSessionDto {
   lastOrderAt: string;
   orderCount: number;
   summary?: TableSessionSummary;
+  /** Server-side bill of the session (list responses). */
+  totals?: TableSessionTotals;
+}
+export interface TableSessionTotals {
+  totalOrders: number;
+  confirmedOrders: number;
+  pendingOrders: number;
+  rejectedOrders: number;
+  confirmedRevenue: number;
+  paidRevenue: number;
+  outstandingRevenue: number;
+  pendingRevenue: number;
 }
 export interface TableSessionSummary {
   totalOrders: number;
