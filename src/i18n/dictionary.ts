@@ -33,6 +33,15 @@ export interface Dictionary {
     refresh: string;
     orderNotFound: string;
     statusUpdatedAnnounce: (label: string) => string;
+    myOrders: string;
+    noOrders: string;
+    noOrdersHint: string;
+    ordersCountLabel: (count: number) => string;
+    ordersLoadError: string;
+    backToMenu: string;
+    sessionClosed: string;
+    sessionState: string;
+    sessionActive: string;
   };
   landing: {
     eyebrow: string;

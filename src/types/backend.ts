@@ -122,6 +122,20 @@ export interface CreateOrderBody {
   items: Array<{ itemId: string; quantity: number }>;
   sessionToken?: string;
 }
+/** Summary of the table session a visitor belongs to. */
+export interface SessionSummaryDto {
+  tableNumber: number;
+  status: "ACTIVE" | "CLOSED";
+  orderCount: number;
+  openedAt: string;
+  closedAt: string | null;
+}
+/** Every order of one table session, newest first. */
+export interface SessionOrdersDto {
+  orders: OrderDto[];
+  total: number;
+  session: SessionSummaryDto;
+}
 export interface PaginatedOrdersDto {
   orders: OrderDto[];
   total: number;

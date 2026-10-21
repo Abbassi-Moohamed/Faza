@@ -1567,6 +1567,240 @@ img {
 }
 
 /* ---------------------------------------------------------------- */
+/* Session order history ("Mes commandes")                          */
+/* ---------------------------------------------------------------- */
+
+.orders-history__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: min(100%, 38rem);
+}
+.orders-history__summary-item {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1 1 8rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-amber-100);
+  border-radius: 0.6rem;
+  color: var(--color-espresso-800);
+}
+.orders-history__summary-item span {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.orders-history__summary-item strong {
+  font-size: 1.25rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.orders-history__list {
+  display: grid;
+  gap: 0.9rem;
+  width: min(100%, 38rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.orders-history__card {
+  padding: 1.1rem 1.25rem;
+  background: #fffdf7;
+  border: 1px solid var(--color-line);
+  border-radius: 0.35rem;
+  box-shadow: 0 0.5rem 1.5rem rgb(43 30 18 / 0.08);
+}
+.orders-history__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.orders-history__date {
+  color: var(--color-mocha-500);
+  font-size: 0.8rem;
+}
+.orders-history__total {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.orders-history__badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.orders-history__badge--pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+.orders-history__badge--confirmed {
+  background: rgb(22 163 74 / 0.14);
+  color: #15803d;
+}
+.orders-history__badge--rejected {
+  background: rgb(220 38 38 / 0.12);
+  color: #b91c1c;
+}
+.orders-history__lines {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.8rem 0;
+  padding: 0.75rem 0;
+  border-top: 1px dashed var(--color-line);
+  border-bottom: 1px dashed var(--color-line);
+  list-style: none;
+  font-size: 0.92rem;
+}
+.orders-history__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--color-mocha-500);
+}
+.orders-history__link {
+  color: var(--color-amber-600);
+  font-weight: 700;
+  text-decoration: underline;
+}
+.orders-history__empty {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  width: min(100%, 38rem);
+  padding: 2rem 1.25rem;
+  background: #fffdf7;
+  border: 1px dashed var(--color-line);
+  border-radius: 0.35rem;
+}
+.orders-history__empty-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.orders-history__cta {
+  margin-top: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  background: var(--color-amber-600);
+  color: var(--color-cream-100);
+  font-weight: 700;
+}
+
+/* Floating entry point to the session history (menu page). */
+.orders-entry {
+  position: fixed;
+  left: 1rem;
+  bottom: 1.25rem;
+  z-index: 1450;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-cream-100);
+  color: var(--color-espresso-800);
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 0.5rem 1.4rem rgb(43 30 18 / 0.18);
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+.orders-entry:hover {
+  background: var(--color-amber-600);
+  color: var(--color-cream-100);
+  transform: translateY(-0.1rem);
+}
+.orders-entry:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-amber-600) 45%, transparent);
+  outline-offset: 3px;
+}
+.orders-entry svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.orders-entry strong {
+  display: grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding-inline: 0.3rem;
+  border-radius: 999px;
+  background: var(--color-amber-600);
+  color: #fff;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.orders-entry:hover strong {
+  background: var(--color-cream-100);
+  color: var(--color-espresso-800);
+}
+
+/* Sibling orders listed under an order ticket. */
+.order-siblings {
+  display: grid;
+  gap: 0.6rem;
+  width: min(100%, 38rem);
+}
+.order-siblings__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+.order-siblings__head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.order-siblings__all {
+  color: var(--color-amber-600);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.order-siblings__list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.order-siblings__link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: #fffdf7;
+  border: 1px solid var(--color-line);
+  border-radius: 0.35rem;
+  font-size: 0.88rem;
+}
+.order-siblings__link:hover {
+  border-color: var(--color-amber-600);
+}
+.order-siblings__link--current {
+  border-color: var(--color-amber-600);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-amber-600) 40%, transparent);
+}
+.order-siblings__date {
+  color: var(--color-mocha-500);
+  font-size: 0.8rem;
+}
+.order-siblings__link strong {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- */
 /* Item card                                                         */
 /* ---------------------------------------------------------------- */
 
@@ -2623,6 +2857,38 @@ img {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* A table groups its sessions; each session is settled independently. */
+.admin-table-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+}
+.admin-table-group__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--color-cream-100);
+  border: 1px solid var(--color-line);
+  border-radius: 0.4rem;
+}
+.admin-table-group__sessions {
+  color: var(--color-mocha-500);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.admin-table-group__total {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.order-admin-card--session {
+  margin-left: 0.9rem;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--color-amber-100);
 }
 
 .admin-toast {

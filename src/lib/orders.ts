@@ -1,4 +1,11 @@
-import type { CreateOrderBody, OrderDto, OrderStatus, PaginatedOrdersDto, PaymentStatus } from "@/types/backend";
+import type {
+  CreateOrderBody,
+  OrderDto,
+  OrderStatus,
+  PaginatedOrdersDto,
+  PaymentStatus,
+  SessionOrdersDto,
+} from "@/types/backend";
 import { requestWithToken } from "@/lib/api";
 
 export function createOrder(body: CreateOrderBody) {
@@ -7,6 +14,17 @@ export function createOrder(body: CreateOrderBody) {
 
 export function getOrder(orderId: string) {
   return requestWithToken<OrderDto>(`/orders/${encodeURIComponent(orderId)}`);
+}
+
+/**
+ * Every order of the table session the token belongs to (newest first). The
+ * token is the only credential: it scopes the list to one party even when
+ * several sessions share a table.
+ */
+export function listSessionOrders(sessionToken: string, limit?: number) {
+  const params = new URLSearchParams({ sessionToken });
+  if (limit) params.set("limit", String(limit));
+  return requestWithToken<SessionOrdersDto>(`/orders?${params.toString()}`);
 }
 
 export function listOrders(token: string, status?: OrderStatus, paymentStatus?: PaymentStatus, limit?: number) {

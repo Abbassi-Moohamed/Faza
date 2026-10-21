@@ -1,18 +1,30 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { getDictionary } from "@/i18n";
-import { getOrder } from "@/lib/orders";
+import { formatPrice } from "@/lib/menu";
+import { getOrder, listSessionOrders } from "@/lib/orders";
 import { getRealtimeSocket } from "@/lib/realtime";
+import { readTableSession } from "@/lib/table-session";
+import { siteConfig } from "@/config/site";
 import type { OrderDto } from "@/types/backend";
 import { BackLink } from "@/components/layout/BackLink";
 import { ItemArt } from "@/components/menu/ItemArt";
 import type { MenuItem } from "@/types/menu";
 
+const timeFormatter = new Intl.DateTimeFormat(siteConfig.locale, {
+  day: "2-digit",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 export default function OrderStatusPage({ params }: { params: Promise<{ slug: string; orderId: string }> }) {
   const d = getDictionary();
   const [order, setOrder] = useState<OrderDto | null>(null);
+  const [sessionOrders, setSessionOrders] = useState<OrderDto[]>([]);
   const [error, setError] = useState(false);
   const [slug, setSlug] = useState("");
   const [orderId, setOrderId] = useState("");
@@ -40,6 +52,23 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     };
   }, [params]);
 
+  // The other orders of the same table session — the visitor keeps a single
+  // ticket per order, the session is the bill.
+  useEffect(() => {
+    if (!slug) return;
+    const stored = readTableSession(slug);
+    if (!stored) return;
+    let active = true;
+    void listSessionOrders(stored.token)
+      .then((response) => {
+        if (active) setSessionOrders(response.orders);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [slug]);
+
   // Realtime: subscribe to this order's room so status/payment changes made
   // by the coffee arrive instantly. The manual refresh button stays as the
   // fallback; on (re)connect we also resync over REST in case events were
@@ -49,6 +78,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     const socket = getRealtimeSocket();
     const applyOrder = (next: OrderDto) => {
       setOrder(next);
+      setSessionOrders((current) => current.map((item) => (item.id === next.id ? next : item)));
       if (previousStatusRef.current && previousStatusRef.current !== next.status) {
         const nextLabel =
           next.status === "CONFIRMED"
@@ -102,7 +132,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   return (
     <main id="main">
       <section className="order-status container">
-        {slug ? <BackLink className="order-status__back" href={`/faza/${slug}`} label={d.notFound.cta} /> : null}
+        {slug ? <BackLink className="order-status__back" href={`/faza/${slug}`} label={d.order.backToMenu} /> : null}
         <p className="sr-only" role="status" aria-live="polite">
           {announce}
         </p>
@@ -160,6 +190,36 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                 </p>
               ) : null}
             </div>
+            {sessionOrders.length > 0 ? (
+              <div className="order-siblings">
+                <div className="order-siblings__head">
+                  <h2>{d.order.myOrders}</h2>
+                  <Link className="order-siblings__all" href={`/faza/${slug}/orders`}>
+                    {d.order.ordersCountLabel(sessionOrders.length)}
+                  </Link>
+                </div>
+                <ul className="order-siblings__list">
+                  {sessionOrders.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        className={`order-siblings__link${item.id === orderId ? " order-siblings__link--current" : ""}`}
+                        href={`/faza/${slug}/order/${item.id}`}
+                      >
+                        <span className={`orders-history__badge orders-history__badge--${item.status.toLowerCase()}`}>
+                          {item.status === "CONFIRMED"
+                            ? d.order.statusConfirmed
+                            : item.status === "REJECTED"
+                              ? d.order.statusRejected
+                              : d.order.statusPending}
+                        </span>
+                        <span className="order-siblings__date">{timeFormatter.format(new Date(item.createdAt))}</span>
+                        <strong>{formatPrice(item.total, siteConfig.currency, siteConfig.locale)}</strong>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <button
               className={`order-status__refresh${refreshing ? " order-status__refresh--loading" : ""}`}
               type="button"
