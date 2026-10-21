@@ -9,10 +9,11 @@ export function getOrder(orderId: string) {
   return requestWithToken<OrderDto>(`/orders/${encodeURIComponent(orderId)}`);
 }
 
-export function listOrders(token: string, status?: OrderStatus, paymentStatus?: PaymentStatus) {
+export function listOrders(token: string, status?: OrderStatus, paymentStatus?: PaymentStatus, limit?: number) {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
   if (paymentStatus) params.set("paymentStatus", paymentStatus);
+  if (limit) params.set("limit", String(limit));
   const query = params.toString() ? `?${params.toString()}` : "";
   return requestWithToken<PaginatedOrdersDto>(`/admin/my-coffee/orders${query}`, {}, token);
 }

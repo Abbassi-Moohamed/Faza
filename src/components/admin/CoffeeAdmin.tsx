@@ -38,6 +38,7 @@ import { ItemForm, type ItemFormValues } from "./ItemForm";
 import { ItemList } from "./ItemList";
 import { OrdersSection } from "./OrdersSection";
 import { InsightsDashboard } from "./InsightsDashboard";
+import { usePendingOrdersCount } from "./usePendingOrdersCount";
 
 type AsyncStatus = "idle" | "loading" | "ready" | "error";
 type View = "service" | "tables" | "orders" | "menu" | "profile" | "security";
@@ -123,6 +124,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
     [token],
   );
   const fetchShiftOptions = useCallback(() => listServiceShifts(token ?? "", undefined, 1, 50), [token]);
+  const pendingOrdersCount = usePendingOrdersCount(token);
 
   const handleExpired = useCallback(() => {
     clearSession();
@@ -605,6 +607,11 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
               role="tab"
               aria-selected={view === id}
               className={cn("admin-tabs__tab", view === id && "admin-tabs__tab--active")}
+              aria-label={
+                id === "orders" && pendingOrdersCount > 0
+                  ? `${d.navigation[id]} — ${d.orders.newOrders(pendingOrdersCount)}`
+                  : undefined
+              }
               onClick={() => {
                 setView(id);
                 setSettingsOpen(false);
@@ -613,6 +620,11 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
               }}
             >
               {d.navigation[id]}
+              {id === "orders" && pendingOrdersCount > 0 ? (
+                <span className="admin-tabs__count" key={pendingOrdersCount}>
+                  {pendingOrdersCount > 99 ? "99+" : pendingOrdersCount}
+                </span>
+              ) : null}
             </button>
           ))}
         </nav>
