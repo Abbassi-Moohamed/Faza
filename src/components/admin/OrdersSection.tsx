@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { listOrders, markOrderPaid, updateOrderStatus } from "@/lib/orders";
 import { getAdminRealtimeSocket } from "@/lib/realtime";
+import { groupSessionsByTable, sessionOutstanding, sessionPending, sessionRevenue } from "@/lib/admin-tables";
 import type { OrderDto, OrderStatus, ServiceShiftDto, TablePaymentOrderDto, TableSessionDto } from "@/types/backend";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 
@@ -378,37 +379,9 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       .reduce((sum, order) => sum + order.total, 0) ?? 0;
   const tableRemaining = tableTotal - tablePaid;
 
-  const sessionEntries = useMemo(() => {
-    const map = new Map<string, { session: TableSessionDto; orders: OrderDto[] }>();
-    for (const session of sessions) {
-      if (session.status !== "ACTIVE") continue;
-      map.set(session.id, { session, orders: [] });
-    }
-    for (const order of orders) {
-      const key = order.tableSessionId ?? `table:${order.tableNumber}`;
-      const current = map.get(key);
-      if (current) current.orders.push(order);
-    }
-    return Array.from(map.values()).filter((entry) => entry.orders.length > 0 || entry.session.status === "ACTIVE");
-  }, [orders, sessions]);
-
   // A table can host several sessions (different parties): the table groups
   // them, each session keeps its own bill and is settled independently.
-  const groupedTables = useMemo(() => {
-    const byTable = new Map<number, typeof sessionEntries>();
-    for (const entry of sessionEntries) {
-      const list = byTable.get(entry.session.tableNumber) ?? [];
-      list.push(entry);
-      byTable.set(entry.session.tableNumber, list);
-    }
-    return Array.from(byTable.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([tableNumber, entries]) => ({
-        tableNumber,
-        entries,
-        orders: entries.flatMap((entry) => entry.orders),
-      }));
-  }, [sessionEntries]);
+  const groupedTables = useMemo(() => groupSessionsByTable(orders, sessions), [orders, sessions]);
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const historicalServices = history.filter((shift) => {
@@ -540,16 +513,12 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                 </strong>
               </div>
               {table.entries.map((entry) => {
-                const totalConfirmed = entry.orders
-                  .filter((order) => order.status === "CONFIRMED")
-                  .reduce((sum, order) => sum + order.total, 0);
+                const totalConfirmed = sessionRevenue(entry.orders);
                 const totalPaid = entry.orders
                   .filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "PAID")
                   .reduce((sum, order) => sum + order.total, 0);
-                const totalOutstanding = totalConfirmed - totalPaid;
-                const totalPending = entry.orders
-                  .filter((order) => order.status === "PENDING")
-                  .reduce((sum, order) => sum + order.total, 0);
+                const totalOutstanding = sessionOutstanding(entry.orders);
+                const totalPending = sessionPending(entry.orders);
                 return (
                   <article className="order-admin-card order-admin-card--session" key={entry.session.id}>
                     <div className="order-admin-card__main">

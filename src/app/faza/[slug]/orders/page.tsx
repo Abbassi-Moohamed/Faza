@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/menu";
 import { getOrder, listSessionOrders } from "@/lib/orders";
 import { getRealtimeSocket } from "@/lib/realtime";
 import { readSessionOrders } from "@/lib/session-orders";
+import { mergeSessionHistory, selectLedgerCandidates } from "@/lib/session-history";
 import { readTableSession } from "@/lib/table-session";
 import { siteConfig } from "@/config/site";
 import type { OrderDto, SessionSummaryDto } from "@/types/backend";
@@ -33,6 +34,7 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
   const [slug, setSlug] = useState("");
   const [orders, setOrders] = useState<OrderDto[]>([]);
   const [session, setSession] = useState<SessionSummaryDto | null>(null);
+  const [tableNumber, setTableNumber] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,17 +64,18 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
       // The server owns the session history. The ledger only fills the gap for
       // the orders of the same table that the server does not know about
       // (session closed and dropped), so two tables never mix in one history.
-      const known = new Set(serverOrders.map((order) => order.id));
-      const missing = local.filter(
-        (entry) => !known.has(entry.id) && (summary ? entry.tableNumber === summary.tableNumber : true),
-      );
-      const extras = await Promise.all(missing.map((entry) => getOrder(entry.id).catch(() => null)));
-      const merged = [...serverOrders, ...extras.filter((order): order is OrderDto => order !== null)].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      const candidates = selectLedgerCandidates(local, serverOrders, summary);
+      const extras = await Promise.all(candidates.map((entry) => getOrder(entry.id).catch(() => null)));
+      const history = mergeSessionHistory(
+        serverOrders,
+        summary,
+        local,
+        extras.filter((order): order is OrderDto => order !== null),
       );
 
-      setOrders(merged);
-      setSession(summary);
+      setOrders(history.orders);
+      setSession(history.session);
+      setTableNumber(history.tableNumber);
       setLoading(false);
     },
     [d],
@@ -113,11 +116,6 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
   }, [slug]);
 
   const total = orders.reduce((sum, order) => sum + order.total, 0);
-  // Without a session (ledger fallback) the orders may span several tables:
-  // the table number is then unknown instead of misleading.
-  const tableNumbers = new Set(orders.map((order) => order.tableNumber));
-  const tableNumber = session?.tableNumber ?? (tableNumbers.size === 1 ? [...tableNumbers][0] : null);
-
   return (
     <main id="main">
       <section className="order-status container">
