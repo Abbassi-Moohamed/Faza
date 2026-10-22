@@ -55,6 +55,15 @@ jobs:
         with:
           node-version: 22
 
+      - name: Check the Vercel credentials
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::No Vercel credentials. Add VERCEL_TOKEN in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
       - name: Pull the Vercel project settings
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
