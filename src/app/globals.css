@@ -2838,36 +2838,231 @@ img {
   gap: 1rem;
 }
 
-/* A table groups its sessions; each session is settled independently. */
-.admin-table-group {
+/* Tables of the coffee: one card per table, every order of the table inside. */
+.admin-table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-table-card {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  width: 100%;
-}
-.admin-table-group__head {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
-  padding: 0.6rem 0.9rem;
-  background: var(--color-cream-100);
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fff;
   border: 1px solid var(--color-line);
-  border-radius: 0.4rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
 }
-.admin-table-group__sessions {
+
+.admin-table-card__head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "identity actions"
+    "metrics metrics";
+  align-items: center;
+  gap: 0.6rem 0.75rem;
+}
+
+.admin-table-card__identity {
+  grid-area: identity;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.admin-table-card__eyebrow {
   color: var(--color-mocha-500);
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.admin-table-group__total {
-  margin-left: auto;
+
+.admin-table-card__number {
+  font-size: 1.5rem;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.order-admin-card--session {
-  margin-left: 0.9rem;
-  padding-left: 0.9rem;
-  border-left: 3px solid var(--color-amber-100);
+
+.admin-table-card__actions {
+  grid-area: actions;
+  justify-self: end;
+}
+
+.admin-table-card__metrics {
+  grid-area: metrics;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.4rem 0.75rem;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-cream-50);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.admin-table-card__metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.admin-table-card__metrics dt {
+  color: var(--color-mocha-500);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-table-card__metrics dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table-card__metrics .is-due dd {
+  color: var(--color-amber-600);
+}
+
+.admin-table-card__metrics .is-pending dd {
+  color: var(--color-amber-600);
+}
+
+.admin-table-card__timeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  margin: 0;
+  color: var(--color-mocha-500);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.admin-table-card__timeline-sep {
+  color: var(--color-mocha-400);
+}
+
+.admin-table-card__orders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-table-card__empty {
+  padding: 0.5rem 0;
+  color: var(--color-mocha-400);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.admin-table-order {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--color-cream-50);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.admin-table-order__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-table-order__state::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.admin-table-order__state--paid {
+  color: var(--color-green-700, #166534);
+  background: var(--color-green-100, #dcefe2);
+}
+
+.admin-table-order__state--due {
+  color: var(--color-amber-600);
+  background: var(--color-amber-100);
+}
+
+.admin-table-order__state--pending {
+  color: var(--color-amber-600);
+  background: var(--color-amber-100);
+}
+
+.admin-table-order__state--rejected {
+  color: #a02c2c;
+  background: #f7e0e0;
+}
+
+.admin-table-order__moment {
+  display: flex;
+  flex-direction: column;
+  color: var(--color-mocha-500);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.admin-table-order__date {
+  font-weight: 700;
+}
+
+.admin-table-order__items {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-table-order__total {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 26rem) {
+  .admin-table-card__head {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "identity"
+      "metrics"
+      "actions";
+  }
+
+  .admin-table-card__actions {
+    justify-self: stretch;
+  }
+
+  .admin-table-order {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .admin-table-order__items {
+    grid-column: 1 / -1;
+  }
 }
 
 .admin-toast {
@@ -3501,6 +3696,16 @@ img {
   background: rgb(30 21 13 / 0.5);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
+}
+
+/* The settlement dialog can be opened from the service-close dialog: it must
+   sit above it. Confirmations sit above both. */
+.admin-dialog--settlement {
+  z-index: 1160;
+}
+
+.admin-dialog--confirm {
+  z-index: 1170;
 }
 
 .admin-dialog__card {

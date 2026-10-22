@@ -4,18 +4,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDictionary } from "@/i18n";
 import {
   ApiClientError,
+  closeCoffeeTable,
   closeCurrentServiceShift,
-  closeTableSession,
   getCurrentServiceShift,
-  getTableSession,
+  listCoffeeTables,
   listServiceShifts,
-  listTableSessions,
   openServiceShift,
 } from "@/lib/api";
 import { listOrders, markOrderPaid, updateOrderStatus } from "@/lib/orders";
 import { getAdminRealtimeSocket } from "@/lib/realtime";
-import { groupSessionsByTable } from "@/lib/admin-tables";
-import type { OrderDto, OrderStatus, ServiceShiftDto, TablePaymentOrderDto, TableSessionDto } from "@/types/backend";
+import {
+  orderItemsLabel,
+  orderMoment,
+  orderStateLabel,
+  pendingTableOrders,
+  tableTotals,
+  tablesSummary,
+  unpaidTableOrders,
+} from "@/lib/admin-tables";
+import type { AdminTableDto, AdminTableOrderDto, OrderDto, OrderStatus, ServiceShiftDto } from "@/types/backend";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 
 const firstShiftLabel = (shift: ServiceShiftDto | null) => {
@@ -38,7 +45,6 @@ type OrdersSectionProps = {
 };
 
 type OpenServiceTable = {
-  id: string;
   tableNumber: number;
   orders: number;
   revenue: number;
@@ -58,18 +64,13 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const [history, setHistory] = useState<ServiceShiftDto[]>([]);
   const [serviceView, setServiceView] = useState<"current" | "history">("current");
   const [historyRange, setHistoryRange] = useState<"today" | "all">("today");
-  const [sessions, setSessions] = useState<TableSessionDto[]>([]);
+  const [tables, setTables] = useState<AdminTableDto[]>([]);
   const [shiftType, setShiftType] = useState<"MORNING" | "AFTERNOON" | "CUSTOM">("MORNING");
   const [shiftBusy, setShiftBusy] = useState(false);
   const [closeShiftBusy, setCloseShiftBusy] = useState(false);
-  const [closeTableBusy, setCloseTableBusy] = useState<string | null>(null);
+  const [closeTableBusy, setCloseTableBusy] = useState<number | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Pick<OrderDto, "id" | "tableNumber" | "total"> | null>(null);
-  const [tablePayment, setTablePayment] = useState<{
-    sessionId: string;
-    tableNumber: number;
-    openedAt?: string;
-    orders: TablePaymentOrderDto[];
-  } | null>(null);
+  const [tablePayment, setTablePayment] = useState<{ tableNumber: number; orders: AdminTableOrderDto[] } | null>(null);
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [serviceCloseTables, setServiceCloseTables] = useState<OpenServiceTable[] | null>(null);
   const [returnToServiceClose, setReturnToServiceClose] = useState(false);
@@ -90,21 +91,21 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const loadShiftData = useCallback(async () => {
     const generation = ++serviceRefreshSequence;
     try {
-      const [shift, list, historyResult] = await Promise.all([
+      const [shift, tableList, historyResult] = await Promise.all([
         getCurrentServiceShift(token),
-        listTableSessions(token, { status: "ACTIVE" }),
+        listCoffeeTables(token),
         serviceView === "history"
           ? listServiceShifts(token, "CLOSED", 1, 50)
           : Promise.resolve({ shifts: [], total: 0, page: 1, limit: 50 }),
       ]);
       if (generation !== serviceRefreshSequence) return;
       setCurrentShift(shift);
-      setSessions(list.sessions);
+      setTables(tableList.tables);
       setHistory(historyResult.shifts.filter((item) => item.id !== shift?.id));
     } catch {
       if (generation !== serviceRefreshSequence) return;
       setCurrentShift(null);
-      setSessions([]);
+      setTables([]);
       setHistory([]);
     }
   }, [token, serviceView]);
@@ -234,7 +235,6 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             (table): table is OpenServiceTable =>
               typeof table === "object" &&
               table !== null &&
-              typeof table.id === "string" &&
               typeof table.tableNumber === "number" &&
               typeof table.orders === "number" &&
               typeof table.revenue === "number",
@@ -254,22 +254,14 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
 
   const handlePayment = async () => {
     if (!paymentTarget || paymentBusy) return;
-    const paymentSessionId = tablePayment?.sessionId ?? null;
+    const paymentTableNumber = tablePayment?.tableNumber ?? null;
     setPaymentBusy(true);
     setError(null);
     try {
       const updated = await markOrderPaid(token, paymentTarget.id);
       setOrders((current) => current.map((order) => (order.id === updated.id ? updated : order)));
       setPaymentTarget(null);
-      if (paymentSessionId) {
-        const refreshed = await getTableSession(token, paymentSessionId);
-        setTablePayment({
-          sessionId: refreshed.id,
-          tableNumber: refreshed.tableNumber,
-          openedAt: refreshed.openedAt,
-          orders: refreshed.summary?.orders ?? [],
-        });
-      }
+      if (paymentTableNumber !== null) await refreshTablePayment(paymentTableNumber);
       await loadShiftData();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Impossible d'enregistrer le paiement.");
@@ -278,38 +270,32 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     }
   };
 
-  const openTablePayment = async (sessionId: string) => {
-    const detail = await getTableSession(token, sessionId);
-    const tableOrders = detail.summary?.orders ?? [];
-    const pending = tableOrders.filter((order) => order.status === "PENDING");
-    const unpaid = tableOrders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "UNPAID");
-    if (pending.length > 0 || unpaid.length > 0) {
-      setTablePayment({
-        sessionId,
-        tableNumber: detail.tableNumber,
-        openedAt: detail.openedAt,
-        orders: tableOrders,
-      });
-      return false;
+  /**
+   * Fresh view of a table, straight from the server.
+   *
+   * The settlement of a table is decided by the server, so the admin UI always
+   * works on the current state of the table and never on a stale copy.
+   */
+  const fetchTable = async (tableNumber: number): Promise<AdminTableDto | null> => {
+    const list = await listCoffeeTables(token);
+    setTables(list.tables);
+    return list.tables.find((table) => table.tableNumber === tableNumber) ?? null;
+  };
+
+  const refreshTablePayment = async (tableNumber: number) => {
+    const table = await fetchTable(tableNumber);
+    if (!table) {
+      setTablePayment(null);
+      return;
     }
-    return true;
+    setTablePayment({ tableNumber, orders: table.orders });
   };
 
-  const refreshTablePayment = async (sessionId: string) => {
-    const detail = await getTableSession(token, sessionId);
-    setTablePayment({
-      sessionId: detail.id,
-      tableNumber: detail.tableNumber,
-      openedAt: detail.openedAt,
-      orders: detail.summary?.orders ?? [],
-    });
-  };
-
-  const handleTableOrderStatus = async (order: TablePaymentOrderDto, status: OrderStatus) => {
+  const handleTableOrderStatus = async (order: AdminTableOrderDto, status: OrderStatus) => {
     try {
       const updated = await updateOrderStatus(token, order.id, status);
       setOrders((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-      if (tablePayment) await refreshTablePayment(tablePayment.sessionId);
+      await refreshTablePayment(tablePayment?.tableNumber ?? order.tableNumber);
       await loadShiftData();
     } catch (e) {
       if (
@@ -328,37 +314,33 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     }
   };
 
-  const handleCloseTable = async (sessionId: string) => {
-    if (!token || closeTableBusy) return;
-    setCloseTableBusy(sessionId);
+  const handleCloseTable = async (tableNumber: number) => {
+    if (!token || closeTableBusy !== null) return;
+    setCloseTableBusy(tableNumber);
+    setError(null);
     try {
-      const canClose = await openTablePayment(sessionId);
-      if (!canClose) return;
-      await closeTableSession(token, sessionId);
-      setSessions((current) => current.filter((session) => session.id !== sessionId));
+      const table = await fetchTable(tableNumber);
+      if (!table) {
+        setError("Cette table n'est plus ouverte.");
+        return;
+      }
+      if (pendingTableOrders(table).length > 0 || unpaidTableOrders(table).length > 0) {
+        // Something is left to settle: the dialog shows the orders to settle.
+        setTablePayment({ tableNumber, orders: table.orders });
+        return;
+      }
+      await closeCoffeeTable(token, tableNumber);
+      setTables((current) => current.filter((item) => item.tableNumber !== tableNumber));
+      setTablePayment(null);
       await loadShiftData();
-      if (returnToServiceClose && currentShift?.id) {
-        const refreshed = await listTableSessions(token, {
-          serviceShiftId: currentShift.id,
-          status: "ACTIVE",
-        });
-        setServiceCloseTables(
-          refreshed.sessions.map((session) => ({
-            id: session.id,
-            tableNumber: session.tableNumber,
-            orders: session.totals?.totalOrders ?? session.orderCount,
-            revenue: session.totals?.confirmedRevenue ?? 0,
-          })),
-        );
+      if (returnToServiceClose) {
+        // The table is settled: the service may now be closable.
         setReturnToServiceClose(false);
+        void handleCloseShift();
       }
     } catch (e) {
       if (e instanceof ApiClientError && e.status === 409) {
-        try {
-          await openTablePayment(sessionId);
-        } catch {
-          setError("La table n'a pas pu être vérifiée. Actualisez les données et réessayez.");
-        }
+        await refreshTablePayment(tableNumber);
       } else {
         setError(e instanceof Error ? e.message : "La table n'a pas pu être clôturée.");
       }
@@ -368,7 +350,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   };
 
   const tableUnpaidOrders =
-    tablePayment?.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "UNPAID") ?? [];
+    tablePayment?.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID") ?? [];
   const tablePendingOrders = tablePayment?.orders.filter((order) => order.status === "PENDING") ?? [];
   const tableTotal =
     tablePayment?.orders.filter((order) => order.status === "CONFIRMED").reduce((sum, order) => sum + order.total, 0) ??
@@ -379,9 +361,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       .reduce((sum, order) => sum + order.total, 0) ?? 0;
   const tableRemaining = tableTotal - tablePaid;
 
-  // A table can host several sessions (different parties): the table groups
-  // them, each session keeps its own bill and is settled independently.
-  const groupedTables = useMemo(() => groupSessionsByTable(orders, sessions), [orders, sessions]);
+  const floor = useMemo(() => tablesSummary(tables), [tables]);
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const historicalServices = history.filter((shift) => {
@@ -438,7 +418,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   <strong>{currentSummary?.totalOrders ?? 0}</strong>Commandes
                 </span>
                 <span>
-                  <strong>{sessions.length}</strong>Tables actives
+                  <strong>{tables.length}</strong>Tables actives
                 </span>
                 <span>
                   <strong>{currentSummary?.paidOrders ?? 0}</strong>Commandes payées
@@ -489,85 +469,112 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         <div className="admin-head">
           <div className="admin-head__text">
             <h2 className="admin-head__title">{serviceDict.activeTables}</h2>
+            <span className="admin-head__hint">
+              {floor.orders} {serviceDict.tableSummary} · {floor.revenue.toFixed(3)} DT
+              {floor.pending > 0 ? ` · ${floor.pending} ${serviceDict.tablePending.toLowerCase()}` : ""}
+              {floor.outstanding > 0
+                ? ` · ${floor.outstanding.toFixed(3)} DT ${serviceDict.tableDue.toLowerCase()}`
+                : ""}
+            </span>
           </div>
         </div>
       ) : null}
       {section === "tables" ? (
-        groupedTables.length === 0 ? (
-          <p className="sheet-state__text">Aucune table active.</p>
+        tables.length === 0 ? (
+          <p className="sheet-state__text">{serviceDict.noOpenTable}</p>
         ) : (
-          groupedTables.map((table) => (
-            <section className="admin-table-group" key={table.tableNumber}>
-              <div className="admin-table-group__head">
-                <strong className="order-admin-card__table">
-                  <span>{serviceDict.tableNumber}</span>
-                  {table.tableNumber}
-                </strong>
-                <span className="admin-status admin-status--pending">
-                  {table.totals.orders} {serviceDict.tableSummary}
-                </span>
-                <span className="admin-table-group__sessions">
-                  {table.entries.length} session{table.entries.length > 1 ? "s" : ""}
-                </span>
-                <strong className="admin-table-group__total">{table.totals.revenue.toFixed(3)} DT</strong>
-              </div>
-              {table.entries.map((entry) => {
-                const totals = entry.totals;
-                return (
-                  <article className="order-admin-card order-admin-card--session" key={entry.session.id}>
-                    <div className="order-admin-card__main">
-                      <div className="order-admin-card__meta">
-                        <strong className="order-admin-card__table">
-                          <span>Session</span>
-                          {serviceDateTime(entry.session.openedAt, false)}
-                        </strong>
-                        <span className="admin-status admin-status--pending">
-                          {totals.orders} {serviceDict.tableSummary}
-                        </span>
+          <div className="admin-table-grid">
+            {tables.map((table) => {
+              const totals = tableTotals(table);
+              const opened = orderMoment(table.openedAt);
+              const last = orderMoment(table.lastOrderAt);
+              return (
+                <article className="admin-table-card" key={table.tableNumber}>
+                  <header className="admin-table-card__head">
+                    <div className="admin-table-card__identity">
+                      <span className="admin-table-card__eyebrow">{serviceDict.tableNumber}</span>
+                      <strong className="admin-table-card__number">{table.tableNumber}</strong>
+                    </div>
+                    <dl className="admin-table-card__metrics">
+                      <div>
+                        <dt>{serviceDict.tableOrders}</dt>
+                        <dd>{totals.totalOrders}</dd>
                       </div>
-                      <div className="order-admin-card__items">
-                        <div className="admin-payment-summary">
-                          <span>
-                            Confirmé <strong>{totals.revenue.toFixed(2)} DT</strong>
-                          </span>
-                          <span>
-                            Payé <strong>{totals.paid.toFixed(2)} DT</strong>
-                          </span>
-                          <span>
-                            À payer <strong>{totals.outstanding.toFixed(2)} DT</strong>
-                          </span>
-                          <span>
-                            En attente <strong>{totals.pending.toFixed(2)} DT</strong>
-                          </span>
+                      <div>
+                        <dt>{serviceDict.tableConfirmed}</dt>
+                        <dd>{totals.confirmedRevenue.toFixed(3)} DT</dd>
+                      </div>
+                      <div>
+                        <dt>{serviceDict.tableCollected}</dt>
+                        <dd>{totals.paidRevenue.toFixed(3)} DT</dd>
+                      </div>
+                      {totals.outstandingRevenue > 0 ? (
+                        <div className="is-due">
+                          <dt>{serviceDict.tableDue}</dt>
+                          <dd>{totals.outstandingRevenue.toFixed(3)} DT</dd>
                         </div>
-                        {entry.orders.map((order) => (
-                          <div className="order-admin-card__item" key={order.id}>
-                            <strong>
-                              {order.status === "CONFIRMED" ? "✓" : order.status === "PENDING" ? "⏳" : "✕"}
-                            </strong>
-                            <span>{order.total.toFixed(3)} DT</span>
-                          </div>
-                        ))}
-                      </div>
+                      ) : null}
+                      {totals.pendingOrders > 0 ? (
+                        <div className="is-pending">
+                          <dt>{serviceDict.tablePending}</dt>
+                          <dd>{totals.pendingOrders}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                    <div className="admin-table-card__actions">
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn--primary"
+                        onClick={() => void handleCloseTable(table.tableNumber)}
+                        disabled={closeTableBusy !== null}
+                      >
+                        {closeTableBusy === table.tableNumber ? serviceDict.closingTable : serviceDict.closeTable}
+                      </button>
                     </div>
-                    <div className="order-admin-card__side">
-                      <strong>{serviceDict.revenue(totals.revenue)}</strong>
-                      <div className="admin-form__actions">
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--ghost"
-                          onClick={() => void handleCloseTable(entry.session.id)}
-                          disabled={closeTableBusy === entry.session.id}
-                        >
-                          {closeTableBusy === entry.session.id ? serviceDict.tableClosed : "Clôturer la session"}
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
-          ))
+                  </header>
+                  <p className="admin-table-card__timeline">
+                    <span>
+                      {serviceDict.tableOpenedOn} {opened.date} à {opened.time}
+                    </span>
+                    <span className="admin-table-card__timeline-sep">·</span>
+                    <span>
+                      {serviceDict.tableLastOrderOn} {last.date} à {last.time}
+                    </span>
+                  </p>
+                  <ul className="admin-table-card__orders">
+                    {table.orders.length === 0 ? (
+                      <li className="admin-table-card__empty">{serviceDict.tableNoOrder}</li>
+                    ) : (
+                      table.orders.map((order) => {
+                        const moment = orderMoment(order.createdAt);
+                        const state =
+                          order.status === "PENDING"
+                            ? "pending"
+                            : order.status === "REJECTED"
+                              ? "rejected"
+                              : order.paymentStatus === "PAID"
+                                ? "paid"
+                                : "due";
+                        return (
+                          <li className="admin-table-order" key={order.id}>
+                            <span className={`admin-table-order__state admin-table-order__state--${state}`}>
+                              {orderStateLabel(order)}
+                            </span>
+                            <time className="admin-table-order__moment" dateTime={order.createdAt}>
+                              <span className="admin-table-order__date">{moment.date}</span>
+                              <span className="admin-table-order__time">{moment.time}</span>
+                            </time>
+                            <span className="admin-table-order__items">{orderItemsLabel(order)}</span>
+                            <strong className="admin-table-order__total">{order.total.toFixed(3)} DT</strong>
+                          </li>
+                        );
+                      })
+                    )}
+                  </ul>
+                </article>
+              );
+            })}
+          </div>
         )
       ) : null}
 
@@ -788,7 +795,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       ) : null}
       {tablePayment ? (
         <div
-          className="admin-dialog"
+          className="admin-dialog admin-dialog--settlement"
           role="dialog"
           aria-modal="true"
           aria-labelledby="table-payment-title"
@@ -801,17 +808,14 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           />
           <div className="admin-dialog__card admin-table-payment-dialog">
             <h3 id="table-payment-title" className="admin-dialog__title">
-              Paiement — table {tablePayment.tableNumber}
+              {serviceDict.settleTable(tablePayment.tableNumber)}
             </h3>
             <p id="table-payment-description" className="admin-dialog__text">
-              {tablePayment.openedAt
-                ? `Session ouverte à ${serviceDateTime(tablePayment.openedAt, false)}.`
-                : "Session de cette table."}{" "}
               {tablePendingOrders.length > 0
-                ? "Cette session contient des commandes en attente. Refusez-les ou confirmez-les, puis enregistrez leur paiement avant de la clôturer."
+                ? "Cette table contient des commandes en attente. Refusez-les ou confirmez-les, puis enregistrez leur paiement avant de la clôturer."
                 : tableUnpaidOrders.length > 0
-                  ? "Cette session contient des commandes non payées. Finalisez les paiements avant de la clôturer."
-                  : "Toutes les commandes confirmées de cette session sont payées."}
+                  ? "Cette table contient des commandes non payées. Finalisez les paiements avant de la clôturer."
+                  : "Toutes les commandes confirmées de cette table sont payées."}
             </p>
             <div className="admin-table-payment-summary">
               <span>
@@ -825,60 +829,63 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               </span>
             </div>
             <div className="admin-table-payment-list">
-              {tablePendingOrders.map((order) => (
-                <div className="admin-table-payment-row" key={order.id}>
-                  <div>
-                    <strong>Commande #{order.id.slice(-6)}</strong>
-                    <span>{order.total.toFixed(3)} DT · En attente</span>
-                  </div>
-                  <div className="admin-form__actions">
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn--ghost"
-                      onClick={() => void handleTableOrderStatus(order, "REJECTED")}
-                      disabled={paymentBusy}
-                    >
-                      Refuser
-                    </button>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn--primary"
-                      onClick={() => void handleTableOrderStatus(order, "CONFIRMED")}
-                      disabled={paymentBusy}
-                    >
-                      Confirmer
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {tablePayment.orders
-                .filter((order) => order.status === "CONFIRMED")
-                .map((order) => (
+              {tablePayment.orders.map((order) => {
+                const moment = orderMoment(order.createdAt);
+                return (
                   <div className="admin-table-payment-row" key={order.id}>
                     <div>
                       <strong>Commande #{order.id.slice(-6)}</strong>
-                      <span>{order.total.toFixed(3)} DT</span>
+                      <span>
+                        {moment.date} à {moment.time} · {order.total.toFixed(3)} DT
+                        {order.status === "PENDING" ? " · En attente" : ""}
+                        {order.status === "REJECTED" ? " · Refusée" : ""}
+                      </span>
+                      <span className="admin-table-payment-row__items">{orderItemsLabel(order)}</span>
                     </div>
-                    {order.paymentStatus === "PAID" ? (
-                      <span className="admin-payment-state admin-payment-state--paid">✓ Payée</span>
+                    {order.status === "PENDING" ? (
+                      <div className="admin-form__actions">
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--ghost"
+                          onClick={() => void handleTableOrderStatus(order, "REJECTED")}
+                          disabled={paymentBusy}
+                        >
+                          Refuser
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--primary"
+                          onClick={() => void handleTableOrderStatus(order, "CONFIRMED")}
+                          disabled={paymentBusy}
+                        >
+                          Confirmer
+                        </button>
+                      </div>
+                    ) : order.status === "CONFIRMED" ? (
+                      order.paymentStatus === "PAID" ? (
+                        <span className="admin-payment-state admin-payment-state--paid">✓ Payée</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--primary"
+                          onClick={() =>
+                            setPaymentTarget({
+                              id: order.id,
+                              tableNumber: order.tableNumber,
+                              total: order.total,
+                            })
+                          }
+                          disabled={paymentBusy}
+                        >
+                          Marquer comme payée
+                        </button>
+                      )
                     ) : (
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn--primary"
-                        onClick={() =>
-                          setPaymentTarget({
-                            id: order.id,
-                            tableNumber: order.tableNumber,
-                            total: order.total,
-                          })
-                        }
-                        disabled={paymentBusy}
-                      >
-                        Marquer comme payée
-                      </button>
+                      <span className="admin-payment-state admin-payment-state--rejected">✕ Refusée</span>
                     )}
                   </div>
-                ))}
+                );
+              })}
             </div>
             <div className="admin-dialog__actions">
               <button
@@ -894,12 +901,11 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   type="button"
                   className="admin-btn admin-btn--primary"
                   onClick={() => {
-                    setTablePayment(null);
-                    void handleCloseTable(tablePayment.sessionId);
+                    void handleCloseTable(tablePayment.tableNumber);
                   }}
-                  disabled={closeTableBusy === tablePayment.sessionId}
+                  disabled={closeTableBusy !== null}
                 >
-                  {closeTableBusy === tablePayment.sessionId ? "Clôture…" : "Clôturer la session"}
+                  {closeTableBusy === tablePayment.tableNumber ? serviceDict.closingTable : serviceDict.closeTable}
                 </button>
               ) : null}
             </div>
@@ -920,7 +926,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       ) : null}
       {noActiveServiceOrder ? (
         <div
-          className="admin-dialog"
+          className="admin-dialog admin-dialog--confirm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="no-active-service-title"
@@ -974,21 +980,21 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               Impossible de clôturer le service
             </h3>
             <p id="service-close-description" className="admin-dialog__text">
-              Certaines sessions sont encore ouvertes. Veuillez d&apos;abord les clôturer.
+              Certaines tables sont encore ouvertes. Veuillez d&apos;abord les clôturer.
             </p>
             {serviceCloseTables.length === 0 ? (
               <div className="admin-service-close-dialog__ready">
-                <strong>Toutes les sessions sont clôturées.</strong>
+                <strong>Toutes les tables sont clôturées.</strong>
                 <span>Le service peut maintenant être clôturé.</span>
               </div>
             ) : (
               <>
                 <strong className="admin-service-close-dialog__label">
-                  Sessions encore ouvertes ({serviceCloseTables.length})
+                  Tables encore ouvertes ({serviceCloseTables.length})
                 </strong>
                 <div className="admin-service-close-dialog__tables">
                   {serviceCloseTables.map((table) => (
-                    <div className="admin-service-close-dialog__table" key={table.id}>
+                    <div className="admin-service-close-dialog__table" key={table.tableNumber}>
                       <div>
                         <strong>Table {table.tableNumber}</strong>
                         <span>
@@ -999,13 +1005,12 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                         type="button"
                         className="admin-btn admin-btn--primary"
                         onClick={() => {
-                          setServiceCloseTables(null);
                           setReturnToServiceClose(true);
-                          void handleCloseTable(table.id);
+                          void handleCloseTable(table.tableNumber);
                         }}
                         disabled={closeTableBusy !== null}
                       >
-                        {closeTableBusy === table.id ? "Vérification…" : "Clôturer la session"}
+                        {closeTableBusy === table.tableNumber ? "Vérification…" : serviceDict.closeTable}
                       </button>
                     </div>
                   ))}

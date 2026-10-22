@@ -218,6 +218,54 @@ export interface TableSessionListDto {
   page: number;
   limit: number;
 }
+
+/**
+ * Table-centric view of the coffee.
+ *
+ * The backoffice settles tables: a table can host several client sessions
+ * and every order it holds is billed to the table.
+ */
+export interface AdminTableTotals {
+  totalOrders: number;
+  confirmedOrders: number;
+  pendingOrders: number;
+  rejectedOrders: number;
+  confirmedRevenue: number;
+  paidRevenue: number;
+  outstandingRevenue: number;
+  pendingRevenue: number;
+}
+export interface AdminTableOrderDto {
+  id: string;
+  /** Table the order belongs to. */
+  tableNumber: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  total: number;
+  /** ISO date of the order. */
+  createdAt: string;
+  paidAt: string | null;
+  items: Array<{ name: string; quantity: number }>;
+}
+export interface AdminTableDto {
+  tableNumber: number;
+  /** Client sessions currently running on the table. */
+  sessions: number;
+  openedAt: string;
+  lastOrderAt: string;
+  totals: AdminTableTotals;
+  /** Every order of the table, newest first. */
+  orders: AdminTableOrderDto[];
+}
+export interface AdminTableListDto {
+  tables: AdminTableDto[];
+  total: number;
+}
+export interface AdminTableCloseDto {
+  tableNumber: number;
+  closedSessions: number;
+  totals: AdminTableTotals;
+}
 export type AnalyticsRange = "today" | "yesterday" | "7d" | "30d" | "this-month" | "previous-month" | "custom";
 export interface AnalyticsQuery {
   from?: string;

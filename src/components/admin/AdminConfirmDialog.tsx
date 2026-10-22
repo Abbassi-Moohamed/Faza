@@ -39,7 +39,7 @@ export function AdminConfirmDialog({
   }, [busy, onCancel]);
 
   return (
-    <div className="admin-dialog" role="alertdialog" aria-modal="true" aria-label={title}>
+    <div className="admin-dialog admin-dialog--confirm" role="alertdialog" aria-modal="true" aria-label={title}>
       <div className="admin-dialog__scrim" onClick={busy ? undefined : onCancel} aria-hidden="true" />
       <div className="admin-dialog__card">
         <h3 className="admin-dialog__title">{title}</h3>

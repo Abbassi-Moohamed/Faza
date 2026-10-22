@@ -279,6 +279,18 @@ export interface Dictionary {
       tableNumber: string;
       tableSummary: string;
       tableClosed: string;
+      noOpenTable: string;
+      tableNoOrder: string;
+      tableOrders: string;
+      tableConfirmed: string;
+      tableCollected: string;
+      tableDue: string;
+      tablePending: string;
+      tableOpenedOn: string;
+      tableLastOrderOn: string;
+      closeTable: string;
+      closingTable: string;
+      settleTable: (tableNumber: number) => string;
       statusOpen: string;
       statusClosed: string;
       ordersCount: (count: number) => string;

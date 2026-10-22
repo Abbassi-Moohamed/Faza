@@ -5,6 +5,8 @@ import type {
   AdminCoffeeDto,
   AdminItemDto,
   AdminImageDto,
+  AdminTableCloseDto,
+  AdminTableListDto,
   AnalyticsDto,
   AnalyticsQuery,
   ApiEnvelope,
@@ -360,6 +362,21 @@ export function getTableSession(token: string, sessionId: string): Promise<Table
 export function closeTableSession(token: string, sessionId: string): Promise<TableSessionDto> {
   return request<TableSessionDto>(`/admin/my-coffee/table-sessions/${encodeURIComponent(sessionId)}/close`, {
     method: "PATCH",
+    headers: authHeader(token),
+  });
+}
+
+/** GET /api/v1/admin/my-coffee/tables */
+export function listCoffeeTables(token: string): Promise<AdminTableListDto> {
+  return request<AdminTableListDto>("/admin/my-coffee/tables", {
+    headers: authHeader(token),
+  });
+}
+
+/** POST /api/v1/admin/my-coffee/tables/:tableNumber/close */
+export function closeCoffeeTable(token: string, tableNumber: number): Promise<AdminTableCloseDto> {
+  return request<AdminTableCloseDto>(`/admin/my-coffee/tables/${encodeURIComponent(String(tableNumber))}/close`, {
+    method: "POST",
     headers: authHeader(token),
   });
 }
