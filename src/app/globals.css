@@ -2907,6 +2907,12 @@ img {
   margin: 0;
 }
 
+/* Two tiles only (the settlement sheet): they keep their own columns
+   whatever the width of the screen. */
+.admin-table-card__stats--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .admin-table-card__stats > div {
   display: flex;
   flex-direction: column;
@@ -3067,7 +3073,7 @@ img {
 }
 
 @media (min-width: 30rem) {
-  .admin-table-card__stats {
+  .admin-table-card__stats:not(.admin-table-card__stats--compact) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

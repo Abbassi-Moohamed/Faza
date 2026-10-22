@@ -17,8 +17,11 @@ import {
   orderItemsLabel,
   orderMoment,
   orderStateLabel,
+  pendingOrders,
   pendingTableOrders,
   tableTotals,
+  totalsFromOrders,
+  unpaidOrders,
   unpaidTableOrders,
 } from "@/lib/admin-tables";
 import type { AdminTableDto, AdminTableOrderDto, OrderDto, OrderStatus, ServiceShiftDto } from "@/types/backend";
@@ -120,6 +123,37 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     return () => window.clearTimeout(handle);
   }, [loadShiftData]);
 
+  // Escape closes the dialog on top: an admin on a phone must never be
+  // trapped in one. The confirmation dialog handles its own Escape (it sits
+  // above the others), so it is left alone here.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || paymentTarget) return;
+      if (paymentBusy || closeTableBusy !== null || closeShiftBusy) return;
+      if (tablePayment) {
+        setTablePayment(null);
+        return;
+      }
+      if (noActiveServiceOrder) {
+        setNoActiveServiceOrder(null);
+        return;
+      }
+      if (serviceCloseTables) {
+        setServiceCloseTables(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    paymentTarget,
+    paymentBusy,
+    closeTableBusy,
+    closeShiftBusy,
+    tablePayment,
+    noActiveServiceOrder,
+    serviceCloseTables,
+  ]);
+
   // Realtime: receive order:new / order:updated pushed by the backend, and
   // resync over REST on every (re)connect so no event is lost while offline.
   useEffect(() => {
@@ -176,6 +210,8 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   }, [token, filter, paymentFilter, section, loadOrders, loadShiftData]);
 
   const action = async (id: string, status: OrderStatus) => {
+    if (orderBusy) return;
+    setOrderBusy(id);
     try {
       await updateOrderStatus(token, id, status);
       loadOrders();
@@ -194,6 +230,8 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         return;
       }
       setError(e instanceof Error ? e.message : "La commande n'a pas pu être mise à jour.");
+    } finally {
+      setOrderBusy(null);
     }
   };
 
@@ -420,17 +458,13 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     }
   };
 
-  const tableUnpaidOrders =
-    tablePayment?.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID") ?? [];
-  const tablePendingOrders = tablePayment?.orders.filter((order) => order.status === "PENDING") ?? [];
-  const tablePaid =
-    tablePayment?.orders
-      .filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "PAID")
-      .reduce((sum, order) => sum + order.total, 0) ?? 0;
-  const tableDue =
-    tablePayment?.orders
-      .filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID")
-      .reduce((sum, order) => sum + order.total, 0) ?? 0;
+  // Bill of the table being settled: the same math as the table cards, so
+  // the admin never reads two different numbers for the same table.
+  const sheetTotals = totalsFromOrders(tablePayment?.orders ?? []);
+  const tableUnpaidOrders = unpaidOrders(tablePayment?.orders ?? []);
+  const tablePendingOrders = pendingOrders(tablePayment?.orders ?? []);
+  const tablePaid = sheetTotals.paidRevenue;
+  const tableDue = sheetTotals.outstandingRevenue;
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const historicalServices = history.filter((shift) => {
@@ -708,6 +742,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       className="admin-btn admin-btn--primary"
                       type="button"
                       onClick={() => void action(order.id, "CONFIRMED")}
+                      disabled={orderBusy !== null}
                     >
                       {d.confirm}
                     </button>
@@ -715,17 +750,19 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       className="admin-btn admin-btn--danger"
                       type="button"
                       onClick={() => void action(order.id, "REJECTED")}
+                      disabled={orderBusy !== null}
                     >
                       {d.reject}
                     </button>
                   </div>
-                ) : order.status === "CONFIRMED" && order.paymentStatus === "UNPAID" ? (
+                ) : order.status === "CONFIRMED" && order.paymentStatus !== "PAID" ? (
                   <button
                     className="admin-btn admin-btn--primary"
                     type="button"
                     onClick={() => setPaymentTarget(order)}
+                    disabled={paymentBusy}
                   >
-                    Marquer comme payée
+                    {d.collect}
                   </button>
                 ) : null}
               </div>
@@ -843,7 +880,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   ? "Encaissez les commandes confirmées avant de clôturer."
                   : "Toutes les commandes confirmées de cette table sont payées."}
             </p>
-            <dl className="admin-table-card__stats">
+            <dl className="admin-table-card__stats admin-table-card__stats--compact">
               <div className={tableDue > 0 ? "is-due" : ""}>
                 <dt>{serviceDict.tableDue}</dt>
                 <dd>

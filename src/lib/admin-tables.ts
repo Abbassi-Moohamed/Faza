@@ -61,11 +61,21 @@ export function tableTotals(table: AdminTableDto): AdminTableTotals {
 }
 
 /** Orders of a table waiting for a decision (confirmation or refusal). */
+export function pendingOrders(orders: AdminTableOrderDto[]): AdminTableOrderDto[] {
+  return orders.filter((order) => order.status === "PENDING");
+}
+
+/** Orders of a table confirmed but not paid yet. */
+export function unpaidOrders(orders: AdminTableOrderDto[]): AdminTableOrderDto[] {
+  return orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID");
+}
+
+/** Orders of a table waiting for a decision (confirmation or refusal). */
 export function pendingTableOrders(table: AdminTableDto): AdminTableOrderDto[] {
-  return table.orders.filter((order) => order.status === "PENDING");
+  return pendingOrders(table.orders);
 }
 
 /** Orders of a table confirmed but not paid yet. */
 export function unpaidTableOrders(table: AdminTableDto): AdminTableOrderDto[] {
-  return table.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID");
+  return unpaidOrders(table.orders);
 }

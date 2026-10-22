@@ -4,9 +4,11 @@ import {
   orderItemsLabel,
   orderMoment,
   orderStateLabel,
+  pendingOrders,
   pendingTableOrders,
   tableTotals,
   totalsFromOrders,
+  unpaidOrders,
   unpaidTableOrders,
 } from "@/lib/admin-tables";
 import type { AdminTableDto, AdminTableOrderDto, AdminTableTotals } from "@/types/backend";
@@ -122,5 +124,17 @@ describe("admin table view", () => {
 
     expect(pendingTableOrders(current).map((order: AdminTableOrderDto) => order.id)).toEqual(["a"]);
     expect(unpaidTableOrders(current).map((order: AdminTableOrderDto) => order.id)).toEqual(["b"]);
+  });
+
+  it("lists the orders to settle from a bare list of orders", () => {
+    const orders = [
+      tableOrder("a", "PENDING"),
+      tableOrder("b", "CONFIRMED", "UNPAID"),
+      tableOrder("c", "CONFIRMED", "PAID"),
+      tableOrder("d", "REJECTED"),
+    ];
+
+    expect(pendingOrders(orders).map((order: AdminTableOrderDto) => order.id)).toEqual(["a"]);
+    expect(unpaidOrders(orders).map((order: AdminTableOrderDto) => order.id)).toEqual(["b"]);
   });
 });
