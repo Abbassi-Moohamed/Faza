@@ -69,26 +69,3 @@ export function pendingTableOrders(table: AdminTableDto): AdminTableOrderDto[] {
 export function unpaidTableOrders(table: AdminTableDto): AdminTableOrderDto[] {
   return table.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID");
 }
-
-/** Global figures of the floor, shown above the table cards. */
-export function tablesSummary(tables: AdminTableDto[]): {
-  tables: number;
-  orders: number;
-  revenue: number;
-  pending: number;
-  outstanding: number;
-} {
-  return tables.reduce(
-    (summary, table) => {
-      const totals = tableTotals(table);
-      return {
-        tables: summary.tables + 1,
-        orders: summary.orders + totals.totalOrders,
-        revenue: summary.revenue + totals.confirmedRevenue,
-        pending: summary.pending + totals.pendingOrders,
-        outstanding: summary.outstanding + totals.outstandingRevenue,
-      };
-    },
-    { tables: 0, orders: 0, revenue: 0, pending: 0, outstanding: 0 },
-  );
-}

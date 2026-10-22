@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDictionary } from "@/i18n";
 import {
   ApiClientError,
@@ -19,7 +19,6 @@ import {
   orderStateLabel,
   pendingTableOrders,
   tableTotals,
-  tablesSummary,
   unpaidTableOrders,
 } from "@/lib/admin-tables";
 import type { AdminTableDto, AdminTableOrderDto, OrderDto, OrderStatus, ServiceShiftDto } from "@/types/backend";
@@ -69,6 +68,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const [shiftBusy, setShiftBusy] = useState(false);
   const [closeShiftBusy, setCloseShiftBusy] = useState(false);
   const [closeTableBusy, setCloseTableBusy] = useState<number | null>(null);
+  const [orderBusy, setOrderBusy] = useState<string | null>(null);
   const [paymentTarget, setPaymentTarget] = useState<Pick<OrderDto, "id" | "tableNumber" | "total"> | null>(null);
   const [tablePayment, setTablePayment] = useState<{ tableNumber: number; orders: AdminTableOrderDto[] } | null>(null);
   const [paymentBusy, setPaymentBusy] = useState(false);
@@ -292,11 +292,13 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   };
 
   const handleTableOrderStatus = async (order: AdminTableOrderDto, status: OrderStatus) => {
+    if (orderBusy) return;
+    setOrderBusy(order.id);
     try {
       const updated = await updateOrderStatus(token, order.id, status);
       setOrders((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-      await refreshTablePayment(tablePayment?.tableNumber ?? order.tableNumber);
       await loadShiftData();
+      if (tablePayment) await refreshTablePayment(tablePayment.tableNumber);
     } catch (e) {
       if (
         status === "CONFIRMED" &&
@@ -311,7 +313,76 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         return;
       }
       setError(e instanceof Error ? e.message : "La commande n'a pas pu être mise à jour.");
+    } finally {
+      setOrderBusy(null);
     }
+  };
+
+  /**
+   * One order of a table: its state, its date, what was ordered and the
+   * amount — plus the single action that can be taken right away.
+   *
+   * Shared by the table cards and by the settlement sheet so the admin reads
+   * the same information in the same place.
+   */
+  const renderOrderRow = (order: AdminTableOrderDto) => {
+    const moment = orderMoment(order.createdAt);
+    const state =
+      order.status === "PENDING"
+        ? "pending"
+        : order.status === "REJECTED"
+          ? "rejected"
+          : order.paymentStatus === "PAID"
+            ? "paid"
+            : "due";
+    const busy = orderBusy === order.id || paymentBusy;
+    return (
+      <li className="admin-table-order" key={order.id}>
+        <div className="admin-table-order__top">
+          <span className={`admin-table-order__state admin-table-order__state--${state}`}>
+            {orderStateLabel(order)}
+          </span>
+          <time className="admin-table-order__moment" dateTime={order.createdAt}>
+            {moment.date} · {moment.time}
+          </time>
+        </div>
+        <div className="admin-table-order__bottom">
+          <span className="admin-table-order__items">{orderItemsLabel(order)}</span>
+          <strong className="admin-table-order__total">{order.total.toFixed(3)} DT</strong>
+        </div>
+        {order.status === "PENDING" ? (
+          <div className="admin-table-order__actions">
+            <button
+              type="button"
+              className="admin-btn admin-btn--small admin-btn--primary"
+              onClick={() => void handleTableOrderStatus(order, "CONFIRMED")}
+              disabled={busy}
+            >
+              {d.confirm}
+            </button>
+            <button
+              type="button"
+              className="admin-btn admin-btn--small admin-btn--ghost"
+              onClick={() => void handleTableOrderStatus(order, "REJECTED")}
+              disabled={busy}
+            >
+              {d.reject}
+            </button>
+          </div>
+        ) : order.status === "CONFIRMED" && order.paymentStatus !== "PAID" ? (
+          <div className="admin-table-order__actions">
+            <button
+              type="button"
+              className="admin-btn admin-btn--small admin-btn--primary"
+              onClick={() => setPaymentTarget({ id: order.id, tableNumber: order.tableNumber, total: order.total })}
+              disabled={busy}
+            >
+              {d.collect}
+            </button>
+          </div>
+        ) : null}
+      </li>
+    );
   };
 
   const handleCloseTable = async (tableNumber: number) => {
@@ -352,16 +423,14 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const tableUnpaidOrders =
     tablePayment?.orders.filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID") ?? [];
   const tablePendingOrders = tablePayment?.orders.filter((order) => order.status === "PENDING") ?? [];
-  const tableTotal =
-    tablePayment?.orders.filter((order) => order.status === "CONFIRMED").reduce((sum, order) => sum + order.total, 0) ??
-    0;
   const tablePaid =
     tablePayment?.orders
       .filter((order) => order.status === "CONFIRMED" && order.paymentStatus === "PAID")
       .reduce((sum, order) => sum + order.total, 0) ?? 0;
-  const tableRemaining = tableTotal - tablePaid;
-
-  const floor = useMemo(() => tablesSummary(tables), [tables]);
+  const tableDue =
+    tablePayment?.orders
+      .filter((order) => order.status === "CONFIRMED" && order.paymentStatus !== "PAID")
+      .reduce((sum, order) => sum + order.total, 0) ?? 0;
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const historicalServices = history.filter((shift) => {
@@ -469,13 +538,6 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         <div className="admin-head">
           <div className="admin-head__text">
             <h2 className="admin-head__title">{serviceDict.activeTables}</h2>
-            <span className="admin-head__hint">
-              {floor.orders} {serviceDict.tableSummary} · {floor.revenue.toFixed(3)} DT
-              {floor.pending > 0 ? ` · ${floor.pending} ${serviceDict.tablePending.toLowerCase()}` : ""}
-              {floor.outstanding > 0
-                ? ` · ${floor.outstanding.toFixed(3)} DT ${serviceDict.tableDue.toLowerCase()}`
-                : ""}
-            </span>
           </div>
         </div>
       ) : null}
@@ -487,88 +549,52 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             {tables.map((table) => {
               const totals = tableTotals(table);
               const opened = orderMoment(table.openedAt);
-              const last = orderMoment(table.lastOrderAt);
               return (
                 <article className="admin-table-card" key={table.tableNumber}>
                   <header className="admin-table-card__head">
                     <div className="admin-table-card__identity">
                       <span className="admin-table-card__eyebrow">{serviceDict.tableNumber}</span>
                       <strong className="admin-table-card__number">{table.tableNumber}</strong>
-                    </div>
-                    <dl className="admin-table-card__metrics">
-                      <div>
-                        <dt>{serviceDict.tableOrders}</dt>
-                        <dd>{totals.totalOrders}</dd>
-                      </div>
-                      <div>
-                        <dt>{serviceDict.tableConfirmed}</dt>
-                        <dd>{totals.confirmedRevenue.toFixed(3)} DT</dd>
-                      </div>
-                      <div>
-                        <dt>{serviceDict.tableCollected}</dt>
-                        <dd>{totals.paidRevenue.toFixed(3)} DT</dd>
-                      </div>
-                      {totals.outstandingRevenue > 0 ? (
-                        <div className="is-due">
-                          <dt>{serviceDict.tableDue}</dt>
-                          <dd>{totals.outstandingRevenue.toFixed(3)} DT</dd>
-                        </div>
-                      ) : null}
                       {totals.pendingOrders > 0 ? (
-                        <div className="is-pending">
-                          <dt>{serviceDict.tablePending}</dt>
-                          <dd>{totals.pendingOrders}</dd>
-                        </div>
+                        <span className="admin-table-card__alert">
+                          {totals.pendingOrders} {serviceDict.tablePending.toLowerCase()}
+                        </span>
                       ) : null}
-                    </dl>
-                    <div className="admin-table-card__actions">
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn--primary"
-                        onClick={() => void handleCloseTable(table.tableNumber)}
-                        disabled={closeTableBusy !== null}
-                      >
-                        {closeTableBusy === table.tableNumber ? serviceDict.closingTable : serviceDict.closeTable}
-                      </button>
                     </div>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--primary admin-btn--small"
+                      onClick={() => void handleCloseTable(table.tableNumber)}
+                      disabled={closeTableBusy !== null}
+                    >
+                      {closeTableBusy === table.tableNumber ? serviceDict.closingTable : serviceDict.closeTableShort}
+                    </button>
                   </header>
-                  <p className="admin-table-card__timeline">
-                    <span>
-                      {serviceDict.tableOpenedOn} {opened.date} à {opened.time}
-                    </span>
-                    <span className="admin-table-card__timeline-sep">·</span>
-                    <span>
-                      {serviceDict.tableLastOrderOn} {last.date} à {last.time}
-                    </span>
-                  </p>
+                  <dl className="admin-table-card__stats">
+                    <div className={totals.outstandingRevenue > 0 ? "is-due" : ""}>
+                      <dt>{serviceDict.tableDue}</dt>
+                      <dd>
+                        {totals.outstandingRevenue.toFixed(3)} <span>DT</span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{serviceDict.tableCollected}</dt>
+                      <dd>
+                        {totals.paidRevenue.toFixed(3)} <span>DT</span>
+                      </dd>
+                    </div>
+                    <div className="admin-table-card__stat--opened">
+                      <dt>{serviceDict.tableOpenedOn}</dt>
+                      <dd>
+                        {opened.date} · {opened.time}
+                      </dd>
+                    </div>
+                  </dl>
                   <ul className="admin-table-card__orders">
                     {table.orders.length === 0 ? (
                       <li className="admin-table-card__empty">{serviceDict.tableNoOrder}</li>
                     ) : (
-                      table.orders.map((order) => {
-                        const moment = orderMoment(order.createdAt);
-                        const state =
-                          order.status === "PENDING"
-                            ? "pending"
-                            : order.status === "REJECTED"
-                              ? "rejected"
-                              : order.paymentStatus === "PAID"
-                                ? "paid"
-                                : "due";
-                        return (
-                          <li className="admin-table-order" key={order.id}>
-                            <span className={`admin-table-order__state admin-table-order__state--${state}`}>
-                              {orderStateLabel(order)}
-                            </span>
-                            <time className="admin-table-order__moment" dateTime={order.createdAt}>
-                              <span className="admin-table-order__date">{moment.date}</span>
-                              <span className="admin-table-order__time">{moment.time}</span>
-                            </time>
-                            <span className="admin-table-order__items">{orderItemsLabel(order)}</span>
-                            <strong className="admin-table-order__total">{order.total.toFixed(3)} DT</strong>
-                          </li>
-                        );
-                      })
+                      table.orders.map((order) => renderOrderRow(order))
                     )}
                   </ul>
                 </article>
@@ -812,81 +838,26 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             </h3>
             <p id="table-payment-description" className="admin-dialog__text">
               {tablePendingOrders.length > 0
-                ? "Cette table contient des commandes en attente. Refusez-les ou confirmez-les, puis enregistrez leur paiement avant de la clôturer."
+                ? "Confirmez ou refusez les commandes en attente."
                 : tableUnpaidOrders.length > 0
-                  ? "Cette table contient des commandes non payées. Finalisez les paiements avant de la clôturer."
+                  ? "Encaissez les commandes confirmées avant de clôturer."
                   : "Toutes les commandes confirmées de cette table sont payées."}
             </p>
-            <div className="admin-table-payment-summary">
-              <span>
-                Total commandes <strong>{tableTotal.toFixed(3)} DT</strong>
-              </span>
-              <span>
-                Déjà payé <strong>{tablePaid.toFixed(3)} DT</strong>
-              </span>
-              <span>
-                Reste à payer <strong>{tableRemaining.toFixed(3)} DT</strong>
-              </span>
-            </div>
-            <div className="admin-table-payment-list">
-              {tablePayment.orders.map((order) => {
-                const moment = orderMoment(order.createdAt);
-                return (
-                  <div className="admin-table-payment-row" key={order.id}>
-                    <div>
-                      <strong>Commande #{order.id.slice(-6)}</strong>
-                      <span>
-                        {moment.date} à {moment.time} · {order.total.toFixed(3)} DT
-                        {order.status === "PENDING" ? " · En attente" : ""}
-                        {order.status === "REJECTED" ? " · Refusée" : ""}
-                      </span>
-                      <span className="admin-table-payment-row__items">{orderItemsLabel(order)}</span>
-                    </div>
-                    {order.status === "PENDING" ? (
-                      <div className="admin-form__actions">
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--ghost"
-                          onClick={() => void handleTableOrderStatus(order, "REJECTED")}
-                          disabled={paymentBusy}
-                        >
-                          Refuser
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--primary"
-                          onClick={() => void handleTableOrderStatus(order, "CONFIRMED")}
-                          disabled={paymentBusy}
-                        >
-                          Confirmer
-                        </button>
-                      </div>
-                    ) : order.status === "CONFIRMED" ? (
-                      order.paymentStatus === "PAID" ? (
-                        <span className="admin-payment-state admin-payment-state--paid">✓ Payée</span>
-                      ) : (
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--primary"
-                          onClick={() =>
-                            setPaymentTarget({
-                              id: order.id,
-                              tableNumber: order.tableNumber,
-                              total: order.total,
-                            })
-                          }
-                          disabled={paymentBusy}
-                        >
-                          Marquer comme payée
-                        </button>
-                      )
-                    ) : (
-                      <span className="admin-payment-state admin-payment-state--rejected">✕ Refusée</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <dl className="admin-table-card__stats">
+              <div className={tableDue > 0 ? "is-due" : ""}>
+                <dt>{serviceDict.tableDue}</dt>
+                <dd>
+                  {tableDue.toFixed(3)} <span>DT</span>
+                </dd>
+              </div>
+              <div>
+                <dt>{serviceDict.tableCollected}</dt>
+                <dd>
+                  {tablePaid.toFixed(3)} <span>DT</span>
+                </dd>
+              </div>
+            </dl>
+            <ul className="admin-table-card__orders">{tablePayment.orders.map((order) => renderOrderRow(order))}</ul>
             <div className="admin-dialog__actions">
               <button
                 type="button"

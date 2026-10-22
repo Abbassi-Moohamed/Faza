@@ -250,6 +250,7 @@ export interface Dictionary {
       empty: string;
       confirm: string;
       reject: string;
+      collect: string;
       refresh: string;
       tableNumber: string;
       live: string;
@@ -277,18 +278,14 @@ export interface Dictionary {
       history: string;
       activeTables: string;
       tableNumber: string;
-      tableSummary: string;
-      tableClosed: string;
       noOpenTable: string;
       tableNoOrder: string;
-      tableOrders: string;
-      tableConfirmed: string;
       tableCollected: string;
       tableDue: string;
       tablePending: string;
       tableOpenedOn: string;
-      tableLastOrderOn: string;
       closeTable: string;
+      closeTableShort: string;
       closingTable: string;
       settleTable: (tableNumber: number) => string;
       statusOpen: string;

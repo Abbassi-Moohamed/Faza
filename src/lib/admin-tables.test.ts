@@ -6,7 +6,6 @@ import {
   orderStateLabel,
   pendingTableOrders,
   tableTotals,
-  tablesSummary,
   totalsFromOrders,
   unpaidTableOrders,
 } from "@/lib/admin-tables";
@@ -123,18 +122,5 @@ describe("admin table view", () => {
 
     expect(pendingTableOrders(current).map((order: AdminTableOrderDto) => order.id)).toEqual(["a"]);
     expect(unpaidTableOrders(current).map((order: AdminTableOrderDto) => order.id)).toEqual(["b"]);
-  });
-
-  it("sums the figures of the floor", () => {
-    const summary = tablesSummary([
-      table(7, [tableOrder("a", "CONFIRMED", "PAID", 12)]),
-      table(12, [tableOrder("b", "CONFIRMED", "UNPAID", 8), tableOrder("c", "PENDING", "UNPAID", 5)]),
-    ]);
-
-    expect(summary.tables).toBe(2);
-    expect(summary.orders).toBe(3);
-    expect(summary.revenue).toBe(20);
-    expect(summary.pending).toBe(1);
-    expect(summary.outstanding).toBe(8);
   });
 });

@@ -2838,19 +2838,21 @@ img {
   gap: 1rem;
 }
 
-/* Tables of the coffee: one card per table, every order of the table inside. */
+/* Tables of the coffee: one card per table, every order of the table inside.
+   Mobile first: the admin reads the card on a phone, so the money and the
+   state of the table come first, the details come after. */
 .admin-table-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 0.85rem;
   align-items: start;
 }
 
 .admin-table-card {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 0.7rem;
+  padding: 0.9rem;
   background: #fff;
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
@@ -2858,20 +2860,18 @@ img {
 }
 
 .admin-table-card__head {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    "identity actions"
-    "metrics metrics";
+  display: flex;
   align-items: center;
-  gap: 0.6rem 0.75rem;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .admin-table-card__identity {
-  grid-area: identity;
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.45rem;
+  min-width: 0;
 }
 
 .admin-table-card__eyebrow {
@@ -2883,71 +2883,80 @@ img {
 }
 
 .admin-table-card__number {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.admin-table-card__actions {
-  grid-area: actions;
-  justify-self: end;
+/* Tables waiting for a decision are flagged in the header. */
+.admin-table-card__alert {
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-amber-100);
+  color: var(--color-amber-600);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.admin-table-card__metrics {
-  grid-area: metrics;
+/* Header stats: what is still due, what is already collected, since when. */
+.admin-table-card__stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
-  gap: 0.4rem 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
   margin: 0;
-  padding: 0.6rem 0.75rem;
+}
+
+.admin-table-card__stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
   background: var(--color-cream-50);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
 }
 
-.admin-table-card__metrics > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.admin-table-card__metrics dt {
+.admin-table-card__stats dt {
   color: var(--color-mocha-500);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.admin-table-card__metrics dd {
+.admin-table-card__stats dd {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.admin-table-card__metrics .is-due dd {
-  color: var(--color-amber-600);
-}
-
-.admin-table-card__metrics .is-pending dd {
-  color: var(--color-amber-600);
-}
-
-.admin-table-card__timeline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.25rem 0.5rem;
-  margin: 0;
-  color: var(--color-mocha-500);
-  font-size: 0.78rem;
+.admin-table-card__stats dd span {
+  font-size: 0.72rem;
   font-weight: 600;
+  color: var(--color-mocha-500);
 }
 
-.admin-table-card__timeline-sep {
-  color: var(--color-mocha-400);
+.admin-table-card__stats .is-due {
+  background: var(--color-amber-100);
+  border-color: var(--color-amber-500);
+}
+
+.admin-table-card__stats .is-due dd {
+  color: var(--color-amber-600);
+}
+
+/* The opening date spans the row on phones, sits next to the money on wide
+   screens. */
+.admin-table-card__stat--opened {
+  grid-column: 1 / -1;
+}
+
+.admin-table-card__stat--opened dd {
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .admin-table-card__orders {
@@ -2967,14 +2976,21 @@ img {
 }
 
 .admin-table-order {
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.5rem 0.6rem;
   background: var(--color-cream-50);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
+}
+
+.admin-table-order__top,
+.admin-table-order__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .admin-table-order__state {
@@ -3017,16 +3033,10 @@ img {
 }
 
 .admin-table-order__moment {
-  display: flex;
-  flex-direction: column;
   color: var(--color-mocha-500);
   font-size: 0.72rem;
-  line-height: 1.2;
+  font-weight: 600;
   white-space: nowrap;
-}
-
-.admin-table-order__date {
-  font-weight: 700;
 }
 
 .admin-table-order__items {
@@ -3043,25 +3053,32 @@ img {
   white-space: nowrap;
 }
 
+/* The action of an order sits under it: one tap to decide, no navigation. */
+.admin-table-order__actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.admin-btn--small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  min-height: 2.1rem;
+}
+
+@media (min-width: 30rem) {
+  .admin-table-card__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-table-card__stat--opened {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 26rem) {
   .admin-table-card__head {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "identity"
-      "metrics"
-      "actions";
-  }
-
-  .admin-table-card__actions {
-    justify-self: stretch;
-  }
-
-  .admin-table-order {
-    grid-template-columns: auto 1fr auto;
-  }
-
-  .admin-table-order__items {
-    grid-column: 1 / -1;
+    align-items: flex-start;
   }
 }
 
@@ -3893,58 +3910,6 @@ img {
   color: #166534;
 }
 
-.admin-table-payment-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
-  margin: 0.35rem 0 0.4rem;
-}
-
-.admin-table-payment-summary span,
-.admin-table-payment-row span {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  color: var(--color-mocha-500);
-  font-size: 0.78rem;
-}
-
-.admin-table-payment-summary strong,
-.admin-table-payment-row strong {
-  color: var(--color-espresso-800);
-  font-size: 0.92rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.admin-table-payment-list {
-  display: grid;
-  gap: 0.5rem;
-  max-height: 15rem;
-  overflow-y: auto;
-  padding-block: 0.25rem;
-}
-
-.admin-table-payment-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  padding: 0.7rem;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  background: var(--color-cream-100);
-}
-
-.admin-table-payment-row > div {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.admin-table-payment-row .admin-btn {
-  flex: none;
-  min-height: 2.5rem;
-}
-
 .admin-payment-state--paid {
   color: var(--color-green-700, #166534) !important;
   font-weight: 700;
@@ -4068,22 +4033,6 @@ img {
 }
 
 @media (max-width: 42rem) {
-  .admin-table-payment-summary {
-    grid-template-columns: 1fr;
-    gap: 0.45rem;
-  }
-
-  .admin-table-payment-summary span {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
-  .admin-table-payment-row {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .admin-service-close-dialog__table {
     align-items: stretch;
     flex-direction: column;
@@ -4097,8 +4046,19 @@ img {
     width: 100%;
   }
 
-  .admin-table-payment-row .admin-btn {
-    width: 100%;
+  /* The action of a bottom sheet stays in the thumb zone, whatever the
+     length of the list. */
+  .admin-dialog__actions {
+    position: sticky;
+    bottom: 0;
+    margin: 0;
+    padding-top: 0.6rem;
+    background: var(--color-cream-50);
+  }
+
+  .admin-dialog__actions .admin-btn {
+    flex: 1;
+    min-height: 2.75rem;
   }
 }
 
