@@ -210,14 +210,25 @@ describe("analytics derived indicators", () => {
 
   it("finds the best day and the revenue of an active hour", () => {
     expect(bestDay(analytics().busiestDays)).toEqual({ dayOfWeek: 5, orders: 6, revenue: 200 });
+    // A busy day of cheap drinks weighs less than a calm one: revenue wins.
+    expect(
+      bestDay([
+        { dayOfWeek: 2, orders: 10, revenue: 50 },
+        { dayOfWeek: 6, orders: 4, revenue: 400 },
+      ]),
+    ).toEqual({ dayOfWeek: 6, orders: 4, revenue: 400 });
     expect(bestDay([])).toBeNull();
     expect(revenuePerHour(analytics())).toBe(100);
   });
 
   it("measures the concentration of the revenue", () => {
-    expect(topItemsShare(analytics().topItems)).toBe(95);
-    expect(topItemsShare(analytics().topItems, 2)).toBe(80);
-    expect(topItemsShare([])).toBe(0);
+    // The top three (100 + 60 + 30) against the confirmed revenue (300).
+    expect(topItemsShare(analytics())).toBeCloseTo(63.33, 2);
+    expect(topItemsShare(analytics(), 2)).toBeCloseTo(53.33, 2);
+    expect(topItemsShare(analytics({ topItems: [] }))).toBe(0);
+    expect(topItemsShare(analytics({ kpis: { ...analytics().kpis, confirmedRevenue: comparison(0, 0, null) } }))).toBe(
+      0,
+    );
   });
 
   it("sums the tables of the period", () => {

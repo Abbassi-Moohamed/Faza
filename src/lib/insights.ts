@@ -230,7 +230,12 @@ export function peakWindow(
   return best;
 }
 
-/** The best day of the week. */
+/**
+ * The best day of the week, by revenue.
+ *
+ * It is the day that brings the most money, not the one with the most
+ * orders: a busy day of cheap drinks can weigh less than a calm one.
+ */
 export function bestDay(busiestDays: AnalyticsDto["busiestDays"] | undefined): {
   dayOfWeek: number;
   orders: number;
@@ -238,17 +243,22 @@ export function bestDay(busiestDays: AnalyticsDto["busiestDays"] | undefined): {
 } | null {
   const days = (busiestDays ?? []).filter((day) => day.orders > 0);
   if (days.length === 0) return null;
-  return days.reduce((best, day) => (day.orders > best.orders ? day : best));
+  return days.reduce((best, day) => (day.revenue > best.revenue ? day : best));
 }
 
-/** Share of the revenue carried by the top items — the concentration risk. */
-export function topItemsShare(topItems: AnalyticsDto["topItems"] | undefined, limit = 3): number {
-  const items = topItems ?? [];
-  const total = items.reduce((sum, item) => sum + item.revenue, 0);
-  if (total === 0) return 0;
-  const top = [...items].sort((a, b) => b.revenue - a.revenue).slice(0, limit);
+/**
+ * Share of the confirmed revenue carried by the top items.
+ *
+ * The denominator is the whole revenue of the period, not the sum of the
+ * listed items: the API caps the list, and a truncated list must not make
+ * the concentration look bigger or smaller than it is.
+ */
+export function topItemsShare(data: AnalyticsDto, limit = 3): number {
+  const total = data.kpis.confirmedRevenue.current;
+  if (total <= 0) return 0;
+  const top = [...(data.topItems ?? [])].sort((a, b) => b.revenue - a.revenue).slice(0, limit);
   const share = top.reduce((sum, item) => sum + item.revenue, 0);
-  return (share / total) * 100;
+  return Math.min(100, (share / total) * 100);
 }
 
 /** What the tables of the period look like. */
@@ -428,7 +438,7 @@ export function revenueMetrics(data: AnalyticsDto): MetricGroup[] {
           comparison: data.kpis.averageConfirmedOrderValue,
         },
         { key: "revenuePerHour", value: revenuePerHour(data), format: "money" },
-        { key: "topItemsShare", value: topItemsShare(data.topItems), format: "percent" },
+        { key: "topItemsShare", value: topItemsShare(data), format: "percent" },
       ],
     },
   ];
@@ -498,7 +508,7 @@ export function menuMetrics(data: AnalyticsDto): MetricGroup[] {
           format: "decimal",
           comparison: averageItemsPerOrder(data),
         },
-        { key: "topItemsShare", value: topItemsShare(data.topItems), format: "percent" },
+        { key: "topItemsShare", value: topItemsShare(data), format: "percent" },
         { key: "unsoldItems", value: unsoldItems(data), format: "count" },
         { key: "availabilityRate", value: availabilityRate(data), format: "percent" },
       ],

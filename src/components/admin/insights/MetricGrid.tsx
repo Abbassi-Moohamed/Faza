@@ -15,7 +15,7 @@ type Props = {
 export function MetricGrid({ metrics, labels, currency, title }: Props) {
   return (
     <div className="insights-metric-group">
-      {title ? <h3 className="insights-metric-group__title">{title}</h3> : null}
+      {title ? <h2 className="insights-metric-group__title">{title}</h2> : null}
       <div className="insights-kpis">
         {metrics.map((metric) => (
           <StatCard

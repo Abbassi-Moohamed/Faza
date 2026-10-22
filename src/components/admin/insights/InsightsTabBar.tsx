@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type KeyboardEvent } from "react";
 
 import type { InsightTab } from "@/lib/insights";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ export function InsightsTabBar({ tabs, active, onChange, label }: Props) {
     onChange(tabs[index].id);
   };
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const last = tabs.length - 1;
     if (event.key === "ArrowRight") {
       event.preventDefault();

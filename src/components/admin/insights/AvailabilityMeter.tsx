@@ -1,3 +1,5 @@
+import { formatCount } from "@/lib/insights";
+
 import { SectionCard } from "./SectionCard";
 
 type Props = {
@@ -41,12 +43,12 @@ export function AvailabilityMeter({
         <span>
           <i className="is-available" />
           {availableLabel}
-          <strong>{available}</strong>
+          <strong>{formatCount(available)}</strong>
         </span>
         <span>
           <i className="is-unavailable" />
           {unavailableLabel}
-          <strong>{unavailable}</strong>
+          <strong>{formatCount(unavailable)}</strong>
         </span>
       </div>
     </SectionCard>

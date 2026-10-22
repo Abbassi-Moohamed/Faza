@@ -1,3 +1,5 @@
+import { formatCount } from "@/lib/insights";
+
 import { SectionCard } from "./SectionCard";
 
 type Props = {
@@ -29,7 +31,7 @@ export function StatusBreakdown({ title, eyebrow, rows, toneOf, emptyMessage }: 
                 <b className={toneOf(row.key)} style={{ width: `${row.percentage}%` }} />
               </span>
               <strong>
-                {row.count} · {row.percentage.toFixed(1)}%
+                {formatCount(row.count)} · {row.percentage.toFixed(1)}%
               </strong>
             </li>
           ))}
