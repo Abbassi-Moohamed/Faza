@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -8,7 +7,7 @@ import { getDictionary } from "@/i18n";
 import { ApiClientError } from "@/lib/api";
 import { createOrder } from "@/lib/orders";
 import { cartCount, cartEventName, cartLinePrice, cartTotal, readCart, writeCart, type CartLine } from "@/lib/cart";
-import { readSessionOrders, rememberSessionOrder } from "@/lib/session-orders";
+import { rememberSessionOrder } from "@/lib/session-orders";
 import { clearTableSession, readTableSession, writeTableSession } from "@/lib/table-session";
 import { formatPrice } from "@/lib/menu";
 import { siteConfig } from "@/config/site";
@@ -30,7 +29,6 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
   const router = useRouter();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
-  const [orderCount, setOrderCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
@@ -46,7 +44,6 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
     const sync = () => {
       setLines(readCart(coffeeSlug));
       setActiveOrderId(window.localStorage.getItem(activeOrderKey(coffeeSlug)));
-      setOrderCount(readSessionOrders(coffeeSlug).length);
       const stored = readTableSession(coffeeSlug);
       setSessionState(stored);
       if (stored) {
@@ -146,7 +143,6 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
       rememberSessionOrder(coffeeSlug, order.id, parsedTable);
       setLines([]);
       setActiveOrderId(order.id);
-      setOrderCount(readSessionOrders(coffeeSlug).length);
       closeDialog();
       router.push(`/faza/${coffeeSlug}/order/${order.id}`);
     } catch (e) {
@@ -168,7 +164,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
     }
   };
 
-  if (lines.length === 0 && !activeOrderId && orderCount === 0) return null;
+  if (lines.length === 0 && !activeOrderId) return null;
 
   const count = cartCount(lines);
   const total = formatPrice(cartTotal(lines), siteConfig.currency, siteConfig.locale);
@@ -182,25 +178,6 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
           sheetOpen={open}
           onOpen={() => setOpen(true)}
         />
-      ) : null}
-
-      {orderCount > 0 ? (
-        <Link className="orders-entry" href={`/faza/${coffeeSlug}/orders`} aria-label={d.order.myOrders}>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
-            <path d="M9 7h6M9 11h6M9 15h3" />
-          </svg>
-          <span>{d.order.myOrders}</span>
-          <strong>{orderCount}</strong>
-        </Link>
       ) : null}
 
       {open ? (

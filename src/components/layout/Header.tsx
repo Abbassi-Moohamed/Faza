@@ -6,32 +6,34 @@ import { useEffect, useState } from "react";
 
 import { siteConfig } from "@/config/site";
 import { cartEventName } from "@/lib/cart";
+import { readSessionOrders } from "@/lib/session-orders";
 
 interface HeaderProps {
-  viewOrder: string;
+  myOrdersLabel: string;
 }
 
-export function Header({ viewOrder }: HeaderProps) {
+export function Header({ myOrdersLabel }: HeaderProps) {
   const pathname = usePathname();
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [orderCount, setOrderCount] = useState(0);
   const pathParts = pathname.split("/").filter(Boolean);
   const isAdminPage = pathParts.includes("admin");
   const coffeeSlug = pathParts[0] === "faza" && pathParts.length >= 2 && !isAdminPage ? pathParts[1] : null;
+  const onHistoryPage = pathParts[pathParts.length - 1] === "orders";
 
   useEffect(() => {
     if (!coffeeSlug) return;
 
-    const syncOrder = () => {
-      setActiveOrderId(window.localStorage.getItem(`faza:active-order:${coffeeSlug}`));
+    const syncOrders = () => {
+      setOrderCount(readSessionOrders(coffeeSlug).length);
     };
-    syncOrder();
-    window.addEventListener(cartEventName(), syncOrder);
-    window.addEventListener("storage", syncOrder);
+    syncOrders();
+    window.addEventListener(cartEventName(), syncOrders);
+    window.addEventListener("storage", syncOrders);
     return () => {
-      window.removeEventListener(cartEventName(), syncOrder);
-      window.removeEventListener("storage", syncOrder);
+      window.removeEventListener(cartEventName(), syncOrders);
+      window.removeEventListener("storage", syncOrders);
     };
-  }, [coffeeSlug]);
+  }, [coffeeSlug, pathname]);
 
   return (
     <header className="site-header">
@@ -42,12 +44,23 @@ export function Header({ viewOrder }: HeaderProps) {
           </span>
         </a>
         <span className="site-header__spacer" aria-hidden="true" />
-        {activeOrderId && coffeeSlug ? (
-          <Link className="header-order-link" href={`/faza/${coffeeSlug}/order/${activeOrderId}`}>
-            <span className="header-order-link__icon" aria-hidden="true">
-              📋
-            </span>
-            {viewOrder}
+        {coffeeSlug && !onHistoryPage ? (
+          <Link className="header-orders-link" href={`/faza/${coffeeSlug}/orders`} aria-label={myOrdersLabel}>
+            <svg
+              className="header-orders-link__icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" />
+              <path d="M9 7h6M9 11h6M9 15h3" />
+            </svg>
+            <span className="header-orders-link__label">{myOrdersLabel}</span>
+            {orderCount > 0 ? <strong className="header-orders-link__count">{orderCount}</strong> : null}
           </Link>
         ) : null}
       </div>

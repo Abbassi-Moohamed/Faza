@@ -270,10 +270,10 @@ img {
   flex: 1;
 }
 
-.header-order-link {
+.header-orders-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   min-height: 2.35rem;
   padding: 0.42rem 0.8rem;
   border: 1px solid color-mix(in srgb, var(--color-amber-600) 55%, var(--color-line));
@@ -287,19 +287,50 @@ img {
   transition:
     background 160ms ease,
     border-color 160ms ease,
+    color 160ms ease,
     transform 160ms ease;
 }
 
-.header-order-link:hover {
+.header-orders-link:hover {
   border-color: var(--color-amber-600);
-  background: var(--color-amber-500);
+  background: var(--color-amber-600);
   color: var(--color-cream-50);
   transform: translateY(-1px);
 }
 
-.header-order-link__icon {
-  font-size: 0.95rem;
-  line-height: 1;
+.header-orders-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-amber-600) 45%, transparent);
+  outline-offset: 3px;
+}
+
+.header-orders-link__icon {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.header-orders-link__count {
+  display: grid;
+  place-items: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  padding-inline: 0.25rem;
+  border-radius: 999px;
+  background: var(--color-amber-600);
+  color: #fff;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.header-orders-link:hover .header-orders-link__count {
+  background: var(--color-cream-50);
+  color: var(--color-espresso-800);
+}
+
+@media (max-width: 26rem) {
+  .header-orders-link__label {
+    display: none;
+  }
 }
 
 /* ---------------------------------------------------------------- */
@@ -1691,58 +1722,6 @@ img {
   background: var(--color-amber-600);
   color: var(--color-cream-100);
   font-weight: 700;
-}
-
-/* Floating entry point to the session history (menu page). */
-.orders-entry {
-  position: fixed;
-  left: 1rem;
-  bottom: 1.25rem;
-  z-index: 1450;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.95rem;
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  background: var(--color-cream-100);
-  color: var(--color-espresso-800);
-  font-size: 0.85rem;
-  font-weight: 700;
-  box-shadow: 0 0.5rem 1.4rem rgb(43 30 18 / 0.18);
-  transition:
-    background 180ms ease,
-    color 180ms ease,
-    transform 180ms ease;
-}
-.orders-entry:hover {
-  background: var(--color-amber-600);
-  color: var(--color-cream-100);
-  transform: translateY(-0.1rem);
-}
-.orders-entry:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-amber-600) 45%, transparent);
-  outline-offset: 3px;
-}
-.orders-entry svg {
-  width: 1.05rem;
-  height: 1.05rem;
-}
-.orders-entry strong {
-  display: grid;
-  place-items: center;
-  min-width: 1.35rem;
-  height: 1.35rem;
-  padding-inline: 0.3rem;
-  border-radius: 999px;
-  background: var(--color-amber-600);
-  color: #fff;
-  font-size: 0.78rem;
-  font-variant-numeric: tabular-nums;
-}
-.orders-entry:hover strong {
-  background: var(--color-cream-100);
-  color: var(--color-espresso-800);
 }
 
 /* Sibling orders listed under an order ticket. */
