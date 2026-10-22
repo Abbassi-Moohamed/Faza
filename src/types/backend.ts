@@ -295,6 +295,10 @@ export interface AnalyticsDto {
     rejectedOrders: number;
     averageConfirmedOrderValue: InsightComparison;
     itemsSold: InsightComparison;
+    /** Average number of items per confirmed order — the basket size. */
+    averageItemsPerOrder: InsightComparison;
+    /** Share of the orders that were refused, in percent. */
+    rejectionRate: InsightComparison;
   };
   revenueTrend: Array<{ bucket: string; revenue: number; orders: number }>;
   orderTrend: Array<{ bucket: string; revenue: number; orders: number }>;
@@ -307,6 +311,8 @@ export interface AnalyticsDto {
     percentageOfRevenue: number;
   }>;
   peakHours: Array<{ hour: number; orders: number }>;
+  /** The same hourly breakdown as `peakHours`, enriched with the revenue. */
+  hourly: Array<{ hour: number; orders: number; revenue: number }>;
   busiestDays: Array<{ dayOfWeek: number; orders: number; revenue: number }>;
   statuses: Array<{ status: OrderStatus; count: number; percentage: number }>;
   promotions: {
@@ -321,6 +327,11 @@ export interface AnalyticsDto {
     unavailableItems: number;
     availabilityPercentage: number;
     historicalRateAvailable: false;
+  };
+  /** Menu items of the coffee that were never sold during the period. */
+  deadStock: {
+    unsoldItems: number;
+    items: Array<{ itemId: string; name: string; categoryName: string; price: number }>;
   };
   tables: Array<{ tableNumber: number; orders: number; revenue: number }>;
   insights: Array<{ id: string; message: string; kind: "positive" | "warning" | "neutral" }>;

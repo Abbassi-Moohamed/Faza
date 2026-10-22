@@ -1,3 +1,5 @@
+import type { DayKey, InsightMetricKey } from "@/lib/insights";
+
 export interface Dictionary {
   order: {
     addToCart: string;
@@ -336,33 +338,68 @@ export interface Dictionary {
       from: string;
       to: string;
       apply: string;
-      loading: string;
       emptyTitle: string;
       emptyMessage: string;
       errorTitle: string;
       retry: string;
-      views: string;
-      orders: string;
-      confirmedOrders: string;
-      itemsSold: string;
-      revenue: string;
-      paidRevenue: string;
-      outstandingRevenue: string;
-      paymentRate: string;
-      averageOrder: string;
-      trend: string;
-      topItems: string;
-      topCategories: string;
-      peakHours: string;
-      statuses: string;
-      promotions: string;
-      availability: string;
-      available: string;
-      unavailable: string;
-      actionable: string;
-      noData: string;
       currency: string;
-      percent: string;
+      noData: string;
+      service: string;
+      allServices: string;
+      customService: string;
+      tabs: {
+        label: string;
+        overview: string;
+        overviewHint: string;
+        revenue: string;
+        revenueHint: string;
+        activity: string;
+        activityHint: string;
+        menu: string;
+        menuHint: string;
+      };
+      groups: {
+        money: string;
+        volume: string;
+        quality: string;
+        tables: string;
+        catalog: string;
+        performance: string;
+      };
+      metrics: Record<InsightMetricKey, string>;
+      days: Record<DayKey, string>;
+      sections: {
+        evolution: string;
+        evolutionRevenueHint: string;
+        evolutionOrdersHint: string;
+        evolutionMetric: string;
+        revenueByHour: string;
+        revenueByTable: string;
+        collection: string;
+        collectionPaid: string;
+        collectionOutstanding: string;
+        topItemsRevenue: string;
+        topItemsQuantity: string;
+        topCategories: string;
+        deadStock: string;
+        deadStockHint: string;
+        availability: string;
+        available: string;
+        unavailable: string;
+        statuses: string;
+        peakHours: string;
+        busiestDays: string;
+        highlights: string;
+        peakWindow: string;
+        bestDay: string;
+        busiestHour: string;
+        limitations: string;
+        item: string;
+        price: string;
+        table: string;
+        category: string;
+        ordersCount: (count: number) => string;
+      };
     };
   };
 }
