@@ -918,6 +918,49 @@ The public URL structure is `/faza/<coffee-slug>` and
 is added, preserve those paths and forward `/api/v1/*` through the Next
 application.
 
+### CI/CD
+
+`.github/workflows/ci-cd.yml` runs on every push to `main`, on every pull
+request, and on demand (`workflow_dispatch`):
+
+| Job      | What it does                                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify` | `npm ci`, typecheck, lint, format check, tests, build. Pull requests stop here.                                                       |
+| `deploy` | Builds the production bundle with the Vercel CLI and deploys it (`vercel pull` → `vercel build` → `vercel deploy --prebuilt --prod`). |
+| `smoke`  | Checks the live site (`scripts/smoke.mjs`): the menu renders server-side and the browser bundle calls the production API.             |
+
+The smoke job is the important one: the frontend and the API are deployed
+independently, so a frontend build can call an API that no longer has the
+route it expects. The smoke test renders `/faza/<coffee-slug>` (a server
+render proves the server can reach the API) and inspects the client bundle
+to prove the browser calls the production API origin.
+
+#### Repository secrets and variables
+
+| Name                          | Kind     | Required | Purpose                                                                        |
+| ----------------------------- | -------- | -------- | ------------------------------------------------------------------------------ |
+| `VERCEL_TOKEN`                | secret   | yes      | Vercel access token (Vercel → Settings → Tokens)                               |
+| `VERCEL_SCOPE`                | secret   | no       | Team/workspace slug or id, for multi-team tokens                               |
+| `PRODUCTION_SITE_URL`         | variable | no       | Deployed site origin (default `https://faza-iota.vercel.app`)                  |
+| `PRODUCTION_API_URL`          | variable | no       | API origin the browser must call (default `https://menuscanapis.onrender.com`) |
+| `BACKEND_API_URL`             | variable | no       | API origin used by the build-time server render                                |
+| `NEXT_PUBLIC_BACKEND_API_URL` | variable | no       | API origin inlined in the browser bundle                                       |
+
+`BACKEND_API_URL` and `NEXT_PUBLIC_BACKEND_API_URL` must also be set in the
+Vercel project settings: `vercel pull` imports them into the build, and
+`NEXT_PUBLIC_BACKEND_API_URL` is inlined into the client bundle at build
+time.
+
+#### Local commands
+
+```bash
+npm run check                                   # typecheck + tests
+npm run smoke -- --url https://faza-iota.vercel.app
+```
+
+If Vercel's own "deploy on push" integration is enabled in the project
+settings, disable it so the site is only deployed by this workflow.
+
 ## Developer guide
 
 ### Add a UI component

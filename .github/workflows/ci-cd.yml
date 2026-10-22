@@ -1,0 +1,101 @@
+name: CI/CD
+
+# Every push to main (a merge is a push to main) runs the checks, deploys the
+# site to Vercel and verifies the live deployment. Pull requests run the
+# checks only, so a broken branch never reaches production.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time: a second push waits for the first deploy to finish
+# instead of racing it.
+concurrency:
+  group: faza-web-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+        env:
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
+          NEXT_PUBLIC_BACKEND_API_URL: ${{ vars.NEXT_PUBLIC_BACKEND_API_URL }}
+
+  deploy:
+    name: Deploy to Vercel
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pull the Vercel project settings
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_SCOPE: ${{ secrets.VERCEL_SCOPE }}
+        run: |
+          args=(--yes --environment=production --token="$VERCEL_TOKEN")
+          if [ -n "$VERCEL_SCOPE" ]; then args+=(--scope "$VERCEL_SCOPE"); fi
+          npx --yes vercel@latest pull "${args[@]}"
+
+      - name: Build the production bundle
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+
+      - name: Deploy the production bundle
+        id: vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          url=$(npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN" | grep -oE 'https://[a-zA-Z0-9.-]+' | head -n 1)
+          echo "deployed: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+  smoke:
+    name: Verify the live site
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the deployed menu
+        env:
+          PRODUCTION_SITE_URL: ${{ vars.PRODUCTION_SITE_URL }}
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          node scripts/smoke.mjs \
+            --url "${PRODUCTION_SITE_URL:-https://faza-iota.vercel.app}" \
+            --api "${PRODUCTION_API_URL:-https://menuscanapis.onrender.com}" \
+            --wait 120
