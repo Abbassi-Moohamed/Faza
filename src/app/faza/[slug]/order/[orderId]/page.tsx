@@ -179,6 +179,38 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
                     </div>
                   );
                 })}
+                {order.offers.map((offer) => {
+                  const artItem: MenuItem = {
+                    id: offer.offerId,
+                    name: offer.name,
+                    description: "",
+                    price: offer.unitPrice,
+                    promotion: null,
+                    isAvailable: true,
+                    image: offer.image ?? undefined,
+                  };
+                  return (
+                    <div className="order-ticket__line order-ticket__line--offer" key={`offer-${offer.offerId}`}>
+                      <div className="order-ticket__product">
+                        <div className="order-ticket__image">
+                          <ItemArt item={artItem} className="order-ticket__image-art" sizes="48px" />
+                        </div>
+                        <span>
+                          <strong>{offer.quantity}×</strong> {offer.name}{" "}
+                          <span className="order-ticket__offer-tag">{d.offer.cartLabel}</span>
+                          {offer.lines.length > 0 ? (
+                            <small className="order-ticket__offer-lines">
+                              {offer.lines
+                                .map((line) => `${line.quantity > 1 ? `${line.quantity}× ` : ""}${line.name}`)
+                                .join(" · ")}
+                            </small>
+                          ) : null}
+                        </span>
+                      </div>
+                      <strong>{offer.subtotal.toFixed(3)} DT</strong>
+                    </div>
+                  );
+                })}
               </div>
               <div className="order-ticket__total">
                 <span>{d.order.total}</span>

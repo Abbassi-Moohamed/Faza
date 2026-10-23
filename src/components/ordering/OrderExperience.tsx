@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { getDictionary } from "@/i18n";
 import { cartEventName, readCart, writeCart, type CartLine } from "@/lib/cart";
 import type { MenuItem } from "@/types/menu";
+import type { FeaturedOfferDto } from "@/types/backend";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
 import { OrderCenter } from "./OrderCenter";
 import { siteConfig } from "@/config/site";
@@ -12,9 +13,10 @@ import { siteConfig } from "@/config/site";
 interface OrderExperienceProps {
   coffeeSlug: string;
   items: MenuItem[];
+  offers?: FeaturedOfferDto[];
 }
 
-export function OrderExperience({ coffeeSlug, items }: OrderExperienceProps) {
+export function OrderExperience({ coffeeSlug, items, offers }: OrderExperienceProps) {
   const d = getDictionary();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [announce, setAnnounce] = useState("");
@@ -121,7 +123,7 @@ export function OrderExperience({ coffeeSlug, items }: OrderExperienceProps) {
         </ul>
       </div>
 
-      <OrderCenter coffeeSlug={coffeeSlug} items={items} />
+      <OrderCenter coffeeSlug={coffeeSlug} items={items} offers={offers} />
     </>
   );
 }

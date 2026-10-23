@@ -732,6 +732,14 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                       <span>{item.name}</span>
                     </div>
                   ))}
+                  {order.offers.map((offer) => (
+                    <div className="order-admin-card__item" key={`offer-${offer.offerId}`}>
+                      <strong>{offer.quantity}×</strong>
+                      <span>
+                        {offer.name} <span className="order-admin-card__offer-tag">Offre</span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="order-admin-card__side">

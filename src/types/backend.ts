@@ -65,6 +65,53 @@ export interface AdminImageDto {
   imageId: string;
   url: string;
 }
+export type OfferStatus = "ACTIVE" | "SCHEDULED" | "EXPIRED" | "SOLD_OUT" | "PAUSED" | "ARCHIVED";
+export interface OfferLineDto {
+  itemId: string;
+  name: string;
+  image: string | null;
+  quantity: number;
+  unitPrice: number;
+}
+export interface FeaturedOfferDto {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image: string | null;
+  originalPrice: number;
+  savings: number;
+  stock: number;
+  startAt: string | null;
+  endAt: string | null;
+  status: OfferStatus;
+  lines: OfferLineDto[];
+}
+export interface AdminOfferDto extends FeaturedOfferDto {
+  isActive: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface OfferLineBody {
+  itemId: string;
+  quantity: number;
+}
+export interface CreateOfferBody {
+  name: string;
+  description?: string;
+  price: number;
+  stock: number;
+  lines: OfferLineBody[];
+  image?: string;
+  startAt?: string | null;
+  endAt?: string | null;
+  isActive?: boolean;
+}
+export interface UpdateOfferBody extends Partial<Omit<CreateOfferBody, "image">> {
+  image?: string | null;
+  archived?: boolean;
+}
 export interface CreateCoffeeBody {
   name: string;
   logo: string;
@@ -100,6 +147,19 @@ export interface OrderLineDto {
   unitPrice: number;
   subtotal: number;
 }
+export interface OrderOfferLineDto {
+  name: string;
+  quantity: number;
+}
+export interface OrderOfferDto {
+  offerId: string;
+  name: string;
+  image: string | null;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  lines: OrderOfferLineDto[];
+}
 export interface OrderDto {
   id: string;
   coffeeId: string;
@@ -109,6 +169,7 @@ export interface OrderDto {
   paidAt: string | null;
   paidBy: string | null;
   items: OrderLineDto[];
+  offers: OrderOfferDto[];
   total: number;
   tableSessionId: string | null;
   serviceShiftId: string | null;
@@ -120,6 +181,7 @@ export interface CreateOrderBody {
   coffeeSlug: string;
   tableNumber: number;
   items: Array<{ itemId: string; quantity: number }>;
+  offers?: Array<{ offerId: string; quantity: number }>;
   sessionToken?: string;
 }
 /** Summary of the table session a visitor belongs to. */

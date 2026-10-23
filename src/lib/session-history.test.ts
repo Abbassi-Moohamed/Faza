@@ -13,6 +13,7 @@ const order = (id: string, tableNumber: number, createdAt: string, total = 10): 
   paidAt: null,
   paidBy: null,
   items: [],
+  offers: [],
   total,
   tableSessionId: "session-1",
   serviceShiftId: null,

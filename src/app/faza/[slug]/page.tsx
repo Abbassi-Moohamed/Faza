@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { MenuScene } from "@/components/menu/MenuScene";
 import { OrderCenter } from "@/components/ordering/OrderCenter";
 import { toMenuCategory } from "@/lib/adapters";
-import { getCoffeeBySlug } from "@/lib/api";
+import { getCoffeeBySlug, getCoffeeOffers } from "@/lib/api";
 import { resolvePublicCoffee } from "@/lib/public-coffee";
 
 interface CoffeePageProps {
@@ -28,6 +28,8 @@ export async function generateMetadata({ params }: CoffeePageProps): Promise<Met
 export default async function CoffeePage({ params }: CoffeePageProps) {
   const { slug } = await params;
   const coffee = await resolvePublicCoffee(slug);
+  // Offers are an enhancement: a failure never breaks the menu itself.
+  const offers = await getCoffeeOffers(slug).catch(() => []);
 
   return (
     <div id="top" className="menu-page">
@@ -38,8 +40,10 @@ export default async function CoffeePage({ params }: CoffeePageProps) {
           cover={coffee.cover}
           coffeeSlug={slug}
           categories={coffee.categories.map(toMenuCategory)}
+          offersHref={offers.length > 0 ? `/faza/${slug}/offers` : undefined}
+          offersCount={offers.length}
         />
-        <OrderCenter coffeeSlug={slug} />
+        <OrderCenter coffeeSlug={slug} offers={offers} />
       </main>
     </div>
   );

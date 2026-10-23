@@ -12,9 +12,11 @@ interface MenuSceneProps {
   cover?: string | null;
   categories: MenuCategory[];
   coffeeSlug: string;
+  offersHref?: string;
+  offersCount?: number;
 }
 
-export function MenuScene({ name, logo, cover, categories, coffeeSlug }: MenuSceneProps) {
+export function MenuScene({ name, logo, cover, categories, coffeeSlug, offersHref, offersCount }: MenuSceneProps) {
   const [resetSignal, setResetSignal] = useState(0);
 
   return (
@@ -24,6 +26,8 @@ export function MenuScene({ name, logo, cover, categories, coffeeSlug }: MenuSce
         logo={logo}
         cover={cover}
         categoriesCount={categories.length}
+        offersHref={offersHref}
+        offersCount={offersCount}
         onReset={() => setResetSignal((value) => value + 1)}
       />
       <CategoryBubbles key={resetSignal} coffeeSlug={coffeeSlug} categories={categories} />

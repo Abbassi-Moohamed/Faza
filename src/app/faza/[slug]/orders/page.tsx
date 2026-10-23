@@ -180,6 +180,12 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
                         <strong>{item.quantity}×</strong> {item.name}
                       </li>
                     ))}
+                    {order.offers.map((offer) => (
+                      <li key={`offer-${offer.offerId}`}>
+                        <strong>{offer.quantity}×</strong> {offer.name}{" "}
+                        <span className="orders-history__offer-tag">{d.offer.cartLabel}</span>
+                      </li>
+                    ))}
                   </ul>
                   <div className="orders-history__foot">
                     <span>

@@ -5,6 +5,7 @@ import type {
   AdminCoffeeDto,
   AdminItemDto,
   AdminImageDto,
+  AdminOfferDto,
   AdminTableCloseDto,
   AdminTableListDto,
   AnalyticsDto,
@@ -13,7 +14,9 @@ import type {
   CoffeeDto,
   CategoryBody,
   CreateCoffeeBody,
+  CreateOfferBody,
   CreateItemBody,
+  FeaturedOfferDto,
   ItemDto,
   ServiceShiftDto,
   ServiceShiftListDto,
@@ -21,6 +24,7 @@ import type {
   TableSessionListDto,
   UpdateCoffeeBody,
   UpdateItemBody,
+  UpdateOfferBody,
 } from "@/types/backend";
 
 /** Operational error carrying the HTTP status of a failed backend response. */
@@ -98,6 +102,11 @@ export function getCoffeeBySlug(slug: string): Promise<CoffeeDto> {
 /** Fetch the items that belong to a specific ItemCategory. */
 export function getItemsByCategoryId(categoryId: string): Promise<ItemDto[]> {
   return request<ItemDto[]>(`/categories/${encodeURIComponent(categoryId)}/items`);
+}
+
+/** Today's purchasable offers of a coffee. */
+export function getCoffeeOffers(coffeeSlug: string): Promise<FeaturedOfferDto[]> {
+  return request<FeaturedOfferDto[]>(`/coffees/${encodeURIComponent(coffeeSlug)}/offers`);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -285,6 +294,37 @@ export function updateMyItem(token: string, itemId: string, body: UpdateItemBody
 /** DELETE /api/v1/admin/my-coffee/items/:itemId */
 export function deleteMyItem(token: string, itemId: string): Promise<{ id: string }> {
   return request<{ id: string }>(`/admin/my-coffee/items/${encodeURIComponent(itemId)}`, {
+    method: "DELETE",
+    headers: authHeader(token),
+  });
+}
+
+/** GET /api/v1/admin/my-coffee/offers */
+export function listMyOffers(token: string): Promise<AdminOfferDto[]> {
+  return request<AdminOfferDto[]>("/admin/my-coffee/offers", { headers: authHeader(token) });
+}
+
+/** POST /api/v1/admin/my-coffee/offers */
+export function createMyOffer(token: string, body: CreateOfferBody): Promise<AdminOfferDto> {
+  return request<AdminOfferDto>("/admin/my-coffee/offers", {
+    method: "POST",
+    headers: authHeader(token),
+    ...jsonBody(body),
+  });
+}
+
+/** PATCH /api/v1/admin/my-coffee/offers/:offerId */
+export function updateMyOffer(token: string, offerId: string, body: UpdateOfferBody): Promise<AdminOfferDto> {
+  return request<AdminOfferDto>(`/admin/my-coffee/offers/${encodeURIComponent(offerId)}`, {
+    method: "PATCH",
+    headers: authHeader(token),
+    ...jsonBody(body),
+  });
+}
+
+/** DELETE /api/v1/admin/my-coffee/offers/:offerId (archives it). */
+export function deleteMyOffer(token: string, offerId: string): Promise<AdminOfferDto> {
+  return request<AdminOfferDto>(`/admin/my-coffee/offers/${encodeURIComponent(offerId)}`, {
     method: "DELETE",
     headers: authHeader(token),
   });

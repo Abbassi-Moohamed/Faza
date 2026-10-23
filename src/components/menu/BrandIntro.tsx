@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { getDictionary } from "@/i18n";
 
@@ -18,6 +19,10 @@ interface BrandIntroProps {
   categoriesCount?: number;
   /** Number of items, shown next to the menu title when known. */
   itemsCount?: number;
+  /** Public offers page; when set, the offers button sits next to the title. */
+  offersHref?: string;
+  /** Number of live offers, shown as a small count next to the button label. */
+  offersCount?: number;
   onReset?: () => void;
 }
 
@@ -30,6 +35,8 @@ export function BrandIntro({
   menuTitle,
   categoriesCount,
   itemsCount,
+  offersHref,
+  offersCount,
   onReset,
 }: BrandIntroProps) {
   const dict = getDictionary();
@@ -75,10 +82,30 @@ export function BrandIntro({
           </div>
         ) : null}
         {!isCoffeeMenu || eyebrow ? <p className="brand-intro__eyebrow">{eyebrow ?? dict.explore.eyebrow}</p> : null}
-        <h1 className="brand-intro__title">
-          {name}
-          <span className="brand-intro__title-accent">.</span>
-        </h1>
+        <div className="brand-intro__heading">
+          <h1 className="brand-intro__title">
+            {name}
+            <span className="brand-intro__title-accent">.</span>
+          </h1>
+          {offersHref ? (
+            <Link
+              className="brand-intro__offers"
+              href={offersHref}
+              aria-label={offersCount != null ? `${dict.offer.viewAll} (${offersCount})` : dict.offer.viewAll}
+              title={dict.offer.viewAll}
+            >
+              <span className="brand-intro__offers-icon" aria-hidden="true">
+                %
+              </span>
+              <span className="brand-intro__offers-label">{dict.offer.viewAll}</span>
+              {offersCount != null && offersCount > 0 ? (
+                <span className="brand-intro__offers-count" aria-hidden="true">
+                  {offersCount}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
+        </div>
         {description ? <p className="brand-intro__description">{description}</p> : null}
         {resolvedMenuTitle ? (
           <div className="brand-intro__menu">

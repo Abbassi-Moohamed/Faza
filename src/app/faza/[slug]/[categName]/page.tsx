@@ -7,7 +7,7 @@ import { CategoryChipsRail } from "@/components/menu/CategoryChipsRail";
 import { OrderExperience } from "@/components/ordering/OrderExperience";
 import { getDictionary } from "@/i18n";
 import { categoryIcon, toMenuItem } from "@/lib/adapters";
-import { ApiClientError, getCoffeeBySlug, getItemsByCategoryId } from "@/lib/api";
+import { ApiClientError, getCoffeeBySlug, getCoffeeOffers, getItemsByCategoryId } from "@/lib/api";
 import { resolvePublicCoffee } from "@/lib/public-coffee";
 import { categoryHref, slugify } from "@/lib/utils";
 
@@ -58,6 +58,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     throw error;
   }
 
+  const offers = await getCoffeeOffers(slug).catch(() => []);
   const menuItems = items.map(toMenuItem);
 
   return (
@@ -94,7 +95,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
 
         {menuItems.length > 0 ? (
-          <OrderExperience coffeeSlug={slug} items={menuItems} />
+          <OrderExperience coffeeSlug={slug} items={menuItems} offers={offers} />
         ) : (
           <div className="container">
             <div className="sheet-state">

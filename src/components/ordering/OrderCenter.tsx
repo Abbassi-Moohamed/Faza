@@ -6,12 +6,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getDictionary } from "@/i18n";
 import { ApiClientError } from "@/lib/api";
 import { createOrder } from "@/lib/orders";
-import { cartCount, cartEventName, cartLinePrice, cartTotal, readCart, writeCart, type CartLine } from "@/lib/cart";
+import {
+  cartCount,
+  cartEventName,
+  cartLinePrice,
+  cartSplit,
+  cartTotal,
+  isOfferLine,
+  readCart,
+  writeCart,
+  type CartLine,
+} from "@/lib/cart";
 import { rememberSessionOrder } from "@/lib/session-orders";
 import { clearTableSession, readTableSession, writeTableSession } from "@/lib/table-session";
 import { formatPrice } from "@/lib/menu";
 import { siteConfig } from "@/config/site";
 import type { MenuItem } from "@/types/menu";
+import type { FeaturedOfferDto } from "@/types/backend";
 import { ItemArt } from "@/components/menu/ItemArt";
 import { CartBubble } from "@/components/ordering/CartBubble";
 
@@ -22,9 +33,11 @@ const CLOSE_ANIMATION_MS = 260;
 interface OrderCenterProps {
   coffeeSlug: string;
   items?: MenuItem[];
+  /** When provided, offer lines are re-checked against the live offers. */
+  offers?: FeaturedOfferDto[];
 }
 
-export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
+export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps) {
   const d = getDictionary();
   const router = useRouter();
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -39,6 +52,18 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
   const [error, setError] = useState<string | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
   const available = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
+  const availableOffers = useMemo(() => new Map((offers ?? []).map((offer) => [offer.id, offer])), [offers]);
+
+  /** A line is blocked when its item/offer is gone or out of stock. */
+  const lineUnavailable = (line: CartLine) => {
+    if (isOfferLine(line)) {
+      if (!offers) return false;
+      const offer = availableOffers.get(line.item.id);
+      return !offer || offer.stock < line.quantity;
+    }
+    const item = available.get(line.item.id);
+    return item !== undefined && !item.isAvailable;
+  };
 
   useEffect(() => {
     const sync = () => {
@@ -110,10 +135,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
 
   const submit = async () => {
     const parsedTable = sessionState ? sessionState.tableNumber : Number(tableNumber.trim());
-    const validLines = lines.filter((line) => {
-      const currentItem = available.get(line.item.id);
-      return currentItem === undefined || currentItem.isAvailable;
-    });
+    const validLines = lines.filter((line) => !lineUnavailable(line));
     if (!Number.isInteger(parsedTable) || parsedTable < 1 || parsedTable > 10000 || validLines.length === 0) {
       setError(d.order.invalidCheckout);
       return;
@@ -122,10 +144,12 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
     setBusy(true);
     setError(null);
     try {
+      const payload = cartSplit(validLines);
       const order = await createOrder({
         coffeeSlug,
         tableNumber: parsedTable,
-        items: validLines.map((line) => ({ itemId: line.item.id, quantity: line.quantity })),
+        items: payload.items,
+        offers: payload.offers,
         sessionToken: sessionState?.token,
       });
       writeCart(coffeeSlug, []);
@@ -206,8 +230,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
                 </div>
               ) : null}
               {lines.map((line) => {
-                const item = available.get(line.item.id);
-                const unavailable = item !== undefined && !item.isAvailable;
+                const unavailable = lineUnavailable(line);
                 return (
                   <div className={`cart-line${unavailable ? " cart-line--unavailable" : ""}`} key={line.item.id}>
                     <div className="cart-line__product">
@@ -220,6 +243,7 @@ export function OrderCenter({ coffeeSlug, items = [] }: OrderCenterProps) {
                       </div>
                       <div>
                         <strong>{line.item.name}</strong>
+                        {isOfferLine(line) ? <small className="cart-line__kind">{d.offer.cartLabel}</small> : null}
                         <small>
                           {formatPrice(cartLinePrice(line) * line.quantity, siteConfig.currency, siteConfig.locale)}
                         </small>
