@@ -453,10 +453,9 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
         name: values.name,
         logo: values.logo,
         cover: values.cover,
-        slug: values.slug,
       });
       setCoffee(updated);
-      setNotice(d.coffeeForm.updated(updated.name));
+      setNotice(d.delete.deleted ? d.delete.deleted(updated.name) : updated.name);
     } catch (error) {
       if (isSessionFailure(error)) {
         handleExpired();
@@ -841,6 +840,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
                 busy={settingsBusy}
                 error={settingsError}
                 hideCancel
+                slugReadOnly
                 onSubmit={handleSettingsSave}
                 onUpload={uploadForSession}
                 onCancel={() => setSettingsError(null)}

@@ -23,6 +23,7 @@ import type {
   TableSessionDto,
   TableSessionListDto,
   UpdateCoffeeBody,
+  UpdateMyCoffeeBody,
   UpdateItemBody,
   UpdateOfferBody,
 } from "@/types/backend";
@@ -216,7 +217,7 @@ export function getCoffeeAnalytics(token: string, query: AnalyticsQuery = {}): P
 }
 
 /** PATCH /api/v1/admin/my-coffee */
-export function updateMyCoffee(token: string, body: UpdateCoffeeBody): Promise<AdminCoffeeDto> {
+export function updateMyCoffee(token: string, body: UpdateMyCoffeeBody): Promise<AdminCoffeeDto> {
   return request<AdminCoffeeDto>("/admin/my-coffee", {
     method: "PATCH",
     headers: authHeader(token),

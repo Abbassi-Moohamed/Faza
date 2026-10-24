@@ -114,9 +114,9 @@ export interface UpdateOfferBody extends Partial<Omit<CreateOfferBody, "image">>
 }
 export interface CreateCoffeeBody {
   name: string;
-  logo: string;
+  slug: string;
+  logo?: string;
   cover?: string;
-  slug?: string;
 }
 export interface UpdateCoffeeBody {
   name?: string;
@@ -124,6 +124,8 @@ export interface UpdateCoffeeBody {
   cover?: string;
   slug?: string;
 }
+/** Coffee admins can edit their own coffee but never its slug. */
+export type UpdateMyCoffeeBody = Omit<UpdateCoffeeBody, "slug">;
 export interface CreateItemBody {
   name: string;
   description?: string;
