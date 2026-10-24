@@ -19,6 +19,21 @@ export function slugify(input: string): string {
     .replace(/(^-+|-+$)/g, "");
 }
 
+/** Build a unique, URL-safe coffee slug, appending `-2`, `-3`, ... on conflict. */
+export function uniqueSlug(input: string, reserved: Iterable<string> = []): string {
+  const taken = new Set(Array.from(reserved, (slug) => slug.toLowerCase()));
+  const base = slugify(input).slice(0, 80).replace(/-+$/g, "") || "coffee";
+  if (!taken.has(base)) return base;
+
+  let suffix = 2;
+  while (true) {
+    const tail = `-${suffix}`;
+    const candidate = `${base.slice(0, 80 - tail.length).replace(/-+$/g, "")}${tail}`;
+    if (!taken.has(candidate)) return candidate;
+    suffix += 1;
+  }
+}
+
 /** Canonical public route for a coffee's category items page. */
 export function categoryHref(coffeeSlug: string, categoryName: string): string {
   return `/faza/${coffeeSlug}/${slugify(categoryName)}`;
