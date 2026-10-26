@@ -137,7 +137,10 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
     setFormBusy(true);
     setFormError(null);
     try {
-      const created = await createCoffee(token, { name: values.name, logo: values.logo, cover: values.cover });
+      const created = await createCoffee(token, {
+        name: values.name,
+        slug: values.slug,
+      });
       loadCoffees();
       setForm(null);
       setNotice(d.coffeeForm.created(created.name));
@@ -283,6 +286,7 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
           dict={dict}
           mode={form.mode}
           initial={formInitial}
+          reservedSlugs={(coffees ?? []).map((coffee) => coffee.slug)}
           title={form.mode === "create" ? d.coffeeForm.createTitle : d.coffeeForm.editTitle}
           busy={formBusy}
           error={formError}

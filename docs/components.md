@@ -21,7 +21,9 @@
 - `AdminPinGate` - PIN entry and error handling.
 - `AdminLayout` - admin top bar, context, public-menu link, logout.
 - `AdminConfirmDialog` - destructive-action confirmation.
-- `CoffeeForm` / `CoffeeList` - app-admin coffee management.
+- `CoffeeForm` / `CoffeeList` - app-admin coffee management. Creating a coffee
+  asks only for its name and unique slug; editing exposes name, slug, logo,
+  cover, and the rest of the coffee attributes.
 - `InsightsDashboard` - shared analytics UI for app and coffee insights.
 - `CoffeeAdmin` - coffee-admin dashboard and view switching.
 - `OrdersSection` - service, tables, and orders views; status/payment filters;

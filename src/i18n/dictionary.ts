@@ -179,7 +179,10 @@ export interface Dictionary {
       coverHint: string;
       coverPreview: string;
       slug: string;
+      slugPlaceholder?: string;
+      slugCreateHint?: string;
       slugHint: string;
+      slugRequired?: string;
       slugInvalid: string;
       save: string;
       saving: string;
