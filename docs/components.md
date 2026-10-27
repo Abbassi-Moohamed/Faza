@@ -13,6 +13,9 @@
 - `OrderCenter` - cart/order submission UI.
 - `OffersList` - public offer cards.
 - `OfferDetailActions` - add an offer to the cart from its detail page.
+- `ItemMediaCarousel` - item gallery for images, GIFs, and muted videos;
+  auto-advances while in view, pauses on manual navigation, exposes a
+  play/pause control, and starts paused when reduced motion is requested.
 - Category bubbles/item cards and sheet-state components under `src/components/`.
 
 ## Admin
@@ -30,6 +33,8 @@
   shift and table actions.
 - `OffersDashboard` - offer status, ordering, and archive-aware display.
 - `OfferForm` - create/update an offer bundle.
+- `ItemMediaManager` - item gallery upload/reorder/delete UI. Videos are no
+  longer blocked by duration on the client; the backend trims over-long videos.
 - `usePendingOrdersCount` - pending-order badge/count hook.
 
 Admin data actions map failures through `src/lib/admin-errors.ts`; raw backend

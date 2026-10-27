@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  formatMediaDuration,
-  ITEM_MEDIA_LIMIT,
-  mediaTypeForFile,
-  validateMediaFile,
-} from "./media";
+import { formatMediaDuration, ITEM_MEDIA_LIMIT, mediaTypeForFile, validateMediaFile } from "./media";
 
 function fileOf(type: string, size: number): File {
   return { type, size } as File;

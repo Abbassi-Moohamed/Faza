@@ -10,6 +10,6 @@ export default defineConfig({
   test: {
     // The session ledger reads `window.localStorage` — jsdom provides it.
     environment: "jsdom",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

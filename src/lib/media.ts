@@ -3,7 +3,6 @@ import type { MenuMedia } from "@/types/menu";
 export const ITEM_MEDIA_LIMIT = 5;
 export const MAX_IMAGE_MB = 25;
 export const MAX_VIDEO_MB = 15;
-export const MAX_VIDEO_SECONDS = 5;
 export const MEDIA_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);

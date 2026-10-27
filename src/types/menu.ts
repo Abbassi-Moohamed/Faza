@@ -26,7 +26,6 @@ export interface MenuItem {
   accent?: string;
 }
 
-
 export interface MenuCategory {
   id: string;
   name: string;

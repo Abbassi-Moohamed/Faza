@@ -270,7 +270,7 @@ export const fr: Dictionary = {
       media: "Visuels de l'article",
       mediaCount: (count, limit) => `${count} sur ${limit}`,
       mediaHint:
-        "Jusqu'à 5 visuels. Le premier sert de couverture. Vidéos MP4/WebM de 5 secondes maximum, images de 25 Mo maximum.",
+        "Jusqu'à 5 visuels. Le premier sert de couverture. Vidéos MP4/WebM : les 5 premières secondes sont conservées, images de 25 Mo maximum.",
       mediaAdd: "Ajouter un visuel",
       mediaDrop: "Glissez vos fichiers ici",
       mediaUploading: "Envoi en cours…",
@@ -281,7 +281,7 @@ export const fr: Dictionary = {
       mediaMoveRight: "Déplacer à droite",
       mediaTypeInvalid: "Format non pris en charge. Utilisez JPG, PNG, WebP, GIF, MP4 ou WebM.",
       mediaSizeInvalid: "Fichier trop volumineux : 25 Mo maximum pour une image, 15 Mo pour une vidéo.",
-      mediaDurationInvalid: "La vidéo doit durer 5 secondes maximum.",
+      mediaDurationInvalid: "Impossible de lire la durée de cette vidéo.",
       mediaLimit: "Vous pouvez ajouter jusqu'à 5 visuels.",
       mediaUploadFailed: "Impossible d'envoyer ce visuel.",
       mediaDeleteFailed: "Impossible de supprimer ce visuel pour le moment.",

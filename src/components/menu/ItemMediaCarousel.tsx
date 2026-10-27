@@ -21,12 +21,15 @@ function mediaOf(item: MenuItem): MenuMedia[] {
   return [];
 }
 
-export function ItemMediaCarousel({ item, sizes = "(min-width: 42rem) 19rem, 92vw", imagePriority = false }: ItemMediaCarouselProps) {
+export function ItemMediaCarousel({
+  item,
+  sizes = "(min-width: 42rem) 19rem, 92vw",
+  imagePriority = false,
+}: ItemMediaCarouselProps) {
   const dict = getDictionary();
   const media = mediaOf(item);
   const [index, setIndex] = useState(0);
   const [inView, setInView] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
   const [paused, setPaused] = useState(false);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -37,8 +40,7 @@ export function ItemMediaCarousel({ item, sizes = "(min-width: 42rem) 19rem, 92v
   const current = media[activeIndex];
   const currentType = current?.type;
   const currentDuration = current?.durationMs;
-  const isGif =
-    current?.mimeType === "image/gif" || (current ? /\.gif(?:$|\?)/i.test(current.url) : false);
+  const isGif = current?.mimeType === "image/gif" || (current ? /\.gif(?:$|\?)/i.test(current.url) : false);
   const hasControls = media.length > 1;
 
   useEffect(() => {
@@ -48,48 +50,48 @@ export function ItemMediaCarousel({ item, sizes = "(min-width: 42rem) 19rem, 92v
       const timer = window.setTimeout(() => setInView(true), 0);
       return () => window.clearTimeout(timer);
     }
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.35 },
-    );
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.35 });
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(query.matches);
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
+    const pauseForReducedMotion = () => {
+      if (query.matches) setPaused(true);
+    };
+    pauseForReducedMotion();
+    query.addEventListener("change", pauseForReducedMotion);
+    return () => query.removeEventListener("change", pauseForReducedMotion);
   }, []);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (inView && !reducedMotion && !paused) {
+    if (inView && !paused) {
       void video.play().catch(() => undefined);
     } else {
       video.pause();
     }
-  }, [activeIndex, inView, reducedMotion, paused, currentType]);
+  }, [activeIndex, inView, paused, currentType]);
 
   useEffect(() => {
-    if (!inView || reducedMotion || paused || media.length < 2) return;
-    const delay =
-      currentType === "video"
-        ? Math.min(5_000, Math.max(2_500, currentDuration ?? 5_000))
-        : 4_200;
+    if (!inView || paused || media.length < 2) return;
+    const delay = currentType === "video" ? Math.min(5_000, Math.max(2_500, currentDuration ?? 5_000)) : 4_200;
     const timer = window.setTimeout(() => {
       setIndex((activeIndex + 1) % media.length);
     }, delay);
     return () => window.clearTimeout(timer);
-  }, [inView, reducedMotion, paused, activeIndex, media.length, currentType, currentDuration]);
+  }, [inView, paused, activeIndex, media.length, currentType, currentDuration]);
+
+  const select = (nextIndex: number) => {
+    setPaused(true);
+    setIndex(nextIndex);
+  };
 
   const go = (delta: number) => {
     if (media.length < 2) return;
-    setPaused(true);
-    setIndex((activeIndex + delta + media.length) % media.length);
+    select((activeIndex + delta + media.length) % media.length);
   };
 
   const failed = !current || failedUrl === current.url;
@@ -160,7 +162,7 @@ export function ItemMediaCarousel({ item, sizes = "(min-width: 42rem) 19rem, 92v
         </span>
       ) : null}
 
-      {hasControls || (!failed && current.type === "video") ? (
+      {!failed && current && (hasControls || current.type === "video") ? (
         <button
           type="button"
           className="item-media__toggle"
@@ -201,10 +203,7 @@ export function ItemMediaCarousel({ item, sizes = "(min-width: 42rem) 19rem, 92v
                 className={`item-media__dot${dotIndex === activeIndex ? " item-media__dot--active" : ""}`}
                 aria-label={dict.menuItem.mediaCount(dotIndex + 1, media.length)}
                 aria-current={dotIndex === activeIndex ? "true" : undefined}
-                onClick={() => {
-                  setPaused(true);
-                  setIndex(dotIndex);
-                }}
+                onClick={() => select(dotIndex)}
               />
             ))}
           </div>

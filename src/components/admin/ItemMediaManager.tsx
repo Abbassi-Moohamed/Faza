@@ -6,7 +6,6 @@ import type { Dictionary } from "@/i18n/dictionary";
 import {
   formatMediaDuration,
   ITEM_MEDIA_LIMIT,
-  MAX_VIDEO_SECONDS,
   MEDIA_ACCEPT,
   mediaTypeForFile,
   readVideoDurationSeconds,
@@ -79,7 +78,7 @@ export function ItemMediaManager({
       const type = mediaTypeForFile(file);
       if (type === "video") {
         const duration = await readVideoDurationSeconds(file);
-        if (duration === null || duration > MAX_VIDEO_SECONDS + 0.05) {
+        if (duration === null) {
           firstError ??= t.mediaDurationInvalid;
           continue;
         }
