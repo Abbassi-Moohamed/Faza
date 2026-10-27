@@ -90,6 +90,20 @@ export function toMenuCategory(category: CategoryDto): MenuCategory {
 }
 
 export function toMenuItem(item: ItemDto): MenuItem {
+  const media =
+    item.media && item.media.length > 0
+      ? item.media.map((entry) => ({
+          imageId: entry.imageId ?? undefined,
+          url: entry.url,
+          type: entry.type,
+          mimeType: entry.mimeType ?? undefined,
+          durationMs: entry.durationMs ?? undefined,
+          alt: entry.alt ?? undefined,
+        }))
+      : item.image
+        ? [{ url: item.image, type: "image" as const }]
+        : [];
+
   return {
     id: item.id,
     name: item.name,
@@ -98,5 +112,6 @@ export function toMenuItem(item: ItemDto): MenuItem {
     promotion: item.promotion ?? null,
     isAvailable: item.isAvailable ?? true,
     image: item.image ?? undefined,
+    media,
   };
 }

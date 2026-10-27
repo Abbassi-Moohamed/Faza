@@ -103,6 +103,12 @@ export interface Dictionary {
   menuItem: {
     promotion: string;
     unavailable: string;
+    mediaPrevious: string;
+    mediaNext: string;
+    mediaCount: (index: number, total: number) => string;
+    mediaPause: string;
+    mediaPlay: string;
+    video: string;
   };
   backToTop: {
     label: string;
@@ -261,6 +267,27 @@ export interface Dictionary {
       unavailable: string;
       urlInvalid: string;
       saved: (name: string) => string;
+      media: string;
+      mediaCount: (count: number, limit: number) => string;
+      mediaHint: string;
+      mediaAdd: string;
+      mediaDrop: string;
+      mediaUploading: string;
+      mediaCover: string;
+      mediaVideo: string;
+      mediaRemove: string;
+      mediaMoveLeft: string;
+      mediaMoveRight: string;
+      mediaTypeInvalid: string;
+      mediaSizeInvalid: string;
+      mediaDurationInvalid: string;
+      mediaLimit: string;
+      mediaUploadFailed: string;
+      mediaDeleteFailed: string;
+      mediaUrlPlaceholder: string;
+      mediaAddUrl: string;
+      mediaUrlInvalid: string;
+      mediaDuplicate: string;
     };
     navigation: {
       service: string;

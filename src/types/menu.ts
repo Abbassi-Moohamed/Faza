@@ -1,6 +1,15 @@
 export type CurrencyCode =
   "AUD" | "CAD" | "CHF" | "DKK" | "EUR" | "GBP" | "JPY" | "NOK" | "NZD" | "SEK" | "TND" | "USD";
 
+export interface MenuMedia {
+  imageId?: string;
+  url: string;
+  type: "image" | "video";
+  mimeType?: string;
+  durationMs?: number;
+  alt?: string;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -11,9 +20,12 @@ export interface MenuItem {
   isAvailable: boolean;
   /** Remote image URL. Images are optional — a gradient placeholder is used when absent. */
   image?: string;
+  /** Ordered gallery (cover first). Videos are muted, inline and short. */
+  media?: MenuMedia[];
   /** Seed color used for the gradient placeholder and highlights. */
   accent?: string;
 }
+
 
 export interface MenuCategory {
   id: string;

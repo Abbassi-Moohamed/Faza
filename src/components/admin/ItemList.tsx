@@ -58,50 +58,76 @@ export function ItemList({
 
   return (
     <ul className="item-list">
-      {items.map((item) => (
-        <li key={item.id} className="item-row">
-          {item.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="item-row__image" src={item.image} alt="" />
-          ) : (
-            <span className="item-row__image item-row__image--empty" aria-hidden="true">
-              {item.name.charAt(0).toUpperCase()}
+      {items.map((item) => {
+        const cover = item.media?.[0];
+        return (
+          <li key={item.id} className="item-row">
+            {cover ? (
+              <span className="item-row__media">
+                {cover.type === "video" ? (
+                  <video
+                    className="item-row__image"
+                    src={cover.url}
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    onMouseEnter={(event) => void event.currentTarget.play().catch(() => undefined)}
+                    onMouseLeave={(event) => event.currentTarget.pause()}
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="item-row__image" src={cover.url} alt="" />
+                )}
+                {item.media.length > 1 ? (
+                  <span className="item-row__media-count" aria-hidden="true">
+                    {item.media.length}
+                  </span>
+                ) : null}
+              </span>
+            ) : item.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="item-row__image" src={item.image} alt="" />
+            ) : (
+              <span className="item-row__image item-row__image--empty" aria-hidden="true">
+                {item.name.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <span className="item-row__body">
+              <span className="item-row__name">{item.name}</span>
+              <span className="item-row__price">
+                {item.promotion != null ? (
+                  <>
+                    <s>{formatPrice(item.price, siteConfig.currency, siteConfig.locale)}</s>{" "}
+                    {formatPrice(item.promotion, siteConfig.currency, siteConfig.locale)}
+                  </>
+                ) : (
+                  formatPrice(item.price, siteConfig.currency, siteConfig.locale)
+                )}
+              </span>
             </span>
-          )}
-          <span className="item-row__body">
-            <span className="item-row__name">{item.name}</span>
-            <span className="item-row__price">
-              {item.promotion != null ? (
-                <>
-                  <s>{formatPrice(item.price, siteConfig.currency, siteConfig.locale)}</s>{" "}
-                  {formatPrice(item.promotion, siteConfig.currency, siteConfig.locale)}
-                </>
-              ) : (
-                formatPrice(item.price, siteConfig.currency, siteConfig.locale)
-              )}
-            </span>
-          </span>
-          <div className="item-row__actions" aria-label={`Actions pour ${item.name}`}>
-            <button type="button" className="row-action row-action--danger" onClick={() => onDelete(item)}>
-              {d.delete.confirm}
-            </button>
-            <button type="button" className="row-action" onClick={() => onEdit(item)}>
-              {d.items.edit}
-            </button>
-            <button
-              type="button"
-              className={`row-action row-action--availability ${item.isAvailable ? "row-action--available" : "row-action--unavailable"}`}
-              disabled={availabilityBusyId === item.id}
-              aria-busy={availabilityBusyId === item.id}
-              aria-label={item.isAvailable ? "Rendre l'article indisponible" : "Rendre l'article disponible"}
-              title={item.isAvailable ? "Rendre l'article indisponible" : "Rendre l'article disponible"}
-              onClick={() => onToggleAvailability(item)}
-            >
-              {item.isAvailable ? d.items.available : d.items.unavailable}
-            </button>
-          </div>
-        </li>
-      ))}
+            <div className="item-row__actions" aria-label={`Actions pour ${item.name}`}>
+              <button type="button" className="row-action row-action--danger" onClick={() => onDelete(item)}>
+                {d.delete.confirm}
+              </button>
+              <button type="button" className="row-action" onClick={() => onEdit(item)}>
+                {d.items.edit}
+              </button>
+              <button
+                type="button"
+                className={`row-action row-action--availability ${item.isAvailable ? "row-action--available" : "row-action--unavailable"}`}
+                disabled={availabilityBusyId === item.id}
+                aria-busy={availabilityBusyId === item.id}
+                aria-label={item.isAvailable ? "Rendre l'article indisponible" : "Rendre l'article disponible"}
+                title={item.isAvailable ? "Rendre l'article indisponible" : "Rendre l'article disponible"}
+                onClick={() => onToggleAvailability(item)}
+              >
+                {item.isAvailable ? d.items.available : d.items.unavailable}
+              </button>
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

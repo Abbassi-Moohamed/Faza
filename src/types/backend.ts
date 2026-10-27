@@ -29,6 +29,14 @@ export interface CoffeeDto {
   slug: string;
   categories: CategoryDto[];
 }
+export interface ItemMediaDto {
+  imageId: string | null;
+  url: string;
+  type: "image" | "video";
+  mimeType: string | null;
+  durationMs: number | null;
+  alt: string | null;
+}
 export interface ItemDto {
   id: string;
   name: string;
@@ -37,6 +45,7 @@ export interface ItemDto {
   promotion: number | null;
   isAvailable: boolean;
   image: string | null;
+  media: ItemMediaDto[];
 }
 export interface AdminCoffeeDto {
   id: string;
@@ -64,6 +73,9 @@ export interface AdminItemDto extends ItemDto {
 export interface AdminImageDto {
   imageId: string;
   url: string;
+  mediaType: "image" | "video";
+  mimeType: string | null;
+  durationMs: number | null;
 }
 export type OfferStatus = "ACTIVE" | "SCHEDULED" | "EXPIRED" | "SOLD_OUT" | "PAUSED" | "ARCHIVED";
 export interface OfferLineDto {
@@ -126,6 +138,10 @@ export interface UpdateCoffeeBody {
 }
 /** Coffee admins can edit their own coffee but never its slug. */
 export type UpdateMyCoffeeBody = Omit<UpdateCoffeeBody, "slug">;
+export interface ItemMediaBody {
+  url: string;
+  alt?: string;
+}
 export interface CreateItemBody {
   name: string;
   description?: string;
@@ -133,6 +149,7 @@ export interface CreateItemBody {
   promotion?: number | null;
   isAvailable?: boolean;
   image?: string;
+  media?: ItemMediaBody[];
 }
 export type UpdateItemBody = Partial<CreateItemBody>;
 export interface CategoryBody {

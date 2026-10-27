@@ -142,6 +142,14 @@ export async function uploadImage(token: string, file: File): Promise<AdminImage
   });
 }
 
+/** DELETE /api/v1/admin/images/:imageId — best-effort cleanup for cancelled uploads. */
+export function deleteImage(token: string, imageId: string): Promise<{ id: string }> {
+  return request<{ id: string }>(`/admin/images/${encodeURIComponent(imageId)}`, {
+    method: "DELETE",
+    headers: authHeader(token),
+  });
+}
+
 /** POST /api/v1/admin/auth/app */
 export function loginAppAdmin(pin: string): Promise<AdminAuthDto> {
   return request<AdminAuthDto>("/admin/auth/app", {

@@ -10,6 +10,7 @@ import {
   changeMyPin,
   createMyCategory,
   createMyItem,
+  deleteImage,
   deleteMyCategory,
   deleteMyItem,
   getMyCoffee,
@@ -401,6 +402,8 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
   };
 
   const uploadForSession = (file: File) => uploadImage(token!, file).then((image) => image.url);
+  const uploadMediaForSession = (file: File) => uploadImage(token!, file);
+  const deleteMediaForSession = (imageId: string) => deleteImage(token!, imageId).then(() => undefined);
 
   const handleItemDelete = async () => {
     if (!token || !itemDelete) return;
@@ -702,14 +705,15 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
                           price: itemForm.item.price,
                           promotion: itemForm.item.promotion,
                           isAvailable: itemForm.item.isAvailable,
-                          image: itemForm.item.image,
+                          media: itemForm.item.media,
                         }
                       : undefined
                   }
                   busy={itemFormBusy}
                   error={itemFormError}
                   onSubmit={handleItemSave}
-                  onUpload={uploadForSession}
+                  onUploadMedia={uploadMediaForSession}
+                  onDeleteUpload={deleteMediaForSession}
                   onCancel={() => {
                     setItemForm(null);
                     setItemFormError(null);

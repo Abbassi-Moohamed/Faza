@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { Dictionary } from "@/i18n/dictionary";
-import { isHttpUrl, isValidPrice } from "@/lib/validators";
+import { isValidPrice } from "@/lib/validators";
 import { cn } from "@/lib/utils";
+import type { AdminImageDto, ItemMediaDto } from "@/types/backend";
+
+import { ItemMediaManager, type ItemMediaDraft } from "./ItemMediaManager";
 
 export interface ItemFormValues {
   name: string;
@@ -12,7 +15,7 @@ export interface ItemFormValues {
   price: number;
   promotion: number | null;
   isAvailable: boolean;
-  image?: string;
+  media: { url: string; alt?: string }[];
 }
 
 interface ItemFormProps {
@@ -25,40 +28,78 @@ interface ItemFormProps {
     price: number;
     promotion: number | null;
     isAvailable: boolean;
-    image: string | null;
+    media: ItemMediaDto[];
   };
   busy: boolean;
   /** Server-side error (already translated). */
   error?: string | null;
   onSubmit: (values: ItemFormValues) => Promise<void>;
-  onUpload: (file: File) => Promise<string>;
+  onUploadMedia: (file: File) => Promise<AdminImageDto>;
+  onDeleteUpload: (imageId: string) => Promise<void>;
   onCancel: () => void;
 }
 
-export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload, onCancel }: ItemFormProps) {
+function draftFromDto(media: ItemMediaDto): ItemMediaDraft {
+  return {
+    key: media.imageId ?? media.url,
+    imageId: media.imageId,
+    url: media.url,
+    type: media.type,
+    mimeType: media.mimeType,
+    durationMs: media.durationMs,
+    alt: media.alt,
+    isNew: false,
+  };
+}
+
+export function ItemForm({
+  dict,
+  title,
+  initial,
+  busy,
+  error,
+  onSubmit,
+  onUploadMedia,
+  onDeleteUpload,
+  onCancel,
+}: ItemFormProps) {
   const t = dict.admin.items;
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
   const [promotion, setPromotion] = useState(initial?.promotion != null ? String(initial.promotion) : "");
   const [isAvailable, setIsAvailable] = useState(initial?.isAvailable ?? true);
-  const [image, setImage] = useState(initial?.image ?? "");
+  const [media, setMedia] = useState<ItemMediaDraft[]>(() => (initial?.media ?? []).map(draftFromDto));
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState(initial?.image ?? "");
   const [submitting, setSubmitting] = useState(false);
+
+  const mediaRef = useRef(media);
+  const deleteRef = useRef(onDeleteUpload);
+  const savedRef = useRef(false);
+
+  useEffect(() => {
+    mediaRef.current = media;
+  }, [media]);
+
+  useEffect(() => {
+    deleteRef.current = onDeleteUpload;
+  }, [onDeleteUpload]);
 
   useEffect(
     () => () => {
-      if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
+      if (savedRef.current) return;
+      for (const entry of mediaRef.current) {
+        if (entry.isNew && entry.imageId) {
+          void deleteRef.current(entry.imageId).catch(() => undefined);
+        }
+      }
     },
-    [preview],
+    [],
   );
 
   const handleSubmit = async () => {
     if (submitting) return;
     const trimmedName = name.trim();
-    const trimmedImage = image.trim();
 
     if (trimmedName.length === 0) {
       setFieldError(t.nameRequired);
@@ -75,25 +116,25 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
       setFieldError(t.promotionInvalid);
       return;
     }
-    if (!file && trimmedImage.length > 0 && !isHttpUrl(trimmedImage)) {
-      setFieldError(t.urlInvalid);
-      return;
-    }
 
     setFieldError(null);
     setSubmitting(true);
+    savedRef.current = true;
     try {
-      const uploadedImage = file ? await onUpload(file) : trimmedImage;
       await onSubmit({
         name: trimmedName,
         description: description.trim().length > 0 ? description.trim() : undefined,
         price: Number(price),
         promotion: promotion.trim().length > 0 ? Number(promotion) : null,
         isAvailable,
-        image: uploadedImage.length > 0 ? uploadedImage : undefined,
+        media: media.map((entry) => ({
+          url: entry.url,
+          alt: entry.alt ?? undefined,
+        })),
       });
-    } catch (error) {
-      setFieldError(error instanceof Error ? error.message : t.uploadFailed);
+    } catch (submitError) {
+      savedRef.current = false;
+      setFieldError(submitError instanceof Error ? submitError.message : t.uploadFailed);
     } finally {
       setSubmitting(false);
     }
@@ -174,37 +215,14 @@ export function ItemForm({ dict, title, initial, busy, error, onSubmit, onUpload
         />
       </label>
 
-      <label className="admin-field">
-        <span className="admin-field__label">{t.image}</span>
-        <input
-          className="admin-field__input"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          disabled={busy || submitting}
-          onChange={(event) => {
-            const selected = event.target.files?.[0] ?? null;
-            if (!selected) return;
-            if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
-            setFile(selected);
-            setPreview(URL.createObjectURL(selected));
-          }}
-        />
-        {preview ? (
-          // Blob previews cannot be passed through next/image's remote loader.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="admin-upload-preview" src={preview} alt={t.imagePreview} />
-        ) : null}
-        <input
-          className="admin-field__input"
-          type="url"
-          inputMode="url"
-          value={image}
-          placeholder={t.imagePlaceholder}
-          disabled={busy || submitting}
-          onChange={(event) => setImage(event.target.value)}
-        />
-        <span className="admin-field__hint">{t.imageHint}</span>
-      </label>
+      <ItemMediaManager
+        dict={dict}
+        media={media}
+        onChange={setMedia}
+        onUpload={onUploadMedia}
+        onDeleteUpload={onDeleteUpload}
+        disabled={busy || submitting}
+      />
 
       {fieldError ? (
         <p className="admin-form__error" role="alert">

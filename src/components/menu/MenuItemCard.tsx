@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 import type { CurrencyCode, MenuItem } from "@/types/menu";
 
-import { ItemArt } from "./ItemArt";
+import { ItemMediaCarousel } from "./ItemMediaCarousel";
 import { PriceBadge } from "./PriceBadge";
 import { getDictionary } from "@/i18n";
 
@@ -31,7 +31,7 @@ export function MenuItemCard({ item, currency, locale, delay = 0 }: MenuItemCard
         </span>
       ) : null}
       <div className="item-card__art">
-        <ItemArt item={item} className="item-card__art-img" sizes="(min-width: 42rem) 19rem, 92vw" />
+        <ItemMediaCarousel item={item} sizes="(min-width: 42rem) 19rem, 92vw" />
         {!item.isAvailable ? (
           <div className="item-card__unavailable-overlay" aria-hidden="true">
             <span>{dict.menuItem.unavailable}</span>
