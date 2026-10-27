@@ -36,7 +36,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     void params.then(({ slug: nextSlug, orderId: nextId }) => {
       setSlug(nextSlug);
       setOrderId(nextId);
-      return getOrder(nextId)
+      return getOrder(nextId, readTableSession(nextSlug)?.token)
         .then((value) => {
           if (active) {
             previousStatusRef.current = value.status;
@@ -76,6 +76,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   useEffect(() => {
     if (!orderId) return;
     const socket = getRealtimeSocket();
+    const sessionToken = readTableSession(slug)?.token;
     const applyOrder = (next: OrderDto) => {
       setOrder(next);
       setSessionOrders((current) => current.map((item) => (item.id === next.id ? next : item)));
@@ -95,26 +96,26 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
       applyOrder(payload);
     };
     const onConnect = () => {
-      void getOrder(orderId)
+      void getOrder(orderId, sessionToken)
         .then(applyOrder)
         .catch(() => undefined);
     };
     socket.on("order:updated", onUpdated);
     socket.on("connect", onConnect);
-    socket.emit("order:subscribe", orderId);
+    socket.emit("order:subscribe", orderId, sessionToken);
     if (socket.connected) onConnect();
     return () => {
       socket.off("order:updated", onUpdated);
       socket.off("connect", onConnect);
       socket.emit("order:unsubscribe", orderId);
     };
-  }, [orderId, d]);
+  }, [orderId, slug, d]);
   const refresh = async () => {
     if (!orderId || refreshing) return;
     setRefreshing(true);
     setError(false);
     try {
-      const latestOrder = await getOrder(orderId);
+      const latestOrder = await getOrder(orderId, readTableSession(slug)?.token);
       previousStatusRef.current = latestOrder.status;
       setOrder(latestOrder);
     } catch {

@@ -65,7 +65,9 @@ export default function SessionOrdersPage({ params }: { params: Promise<{ slug: 
       // the orders of the same table that the server does not know about
       // (session closed and dropped), so two tables never mix in one history.
       const candidates = selectLedgerCandidates(local, serverOrders, summary);
-      const extras = await Promise.all(candidates.map((entry) => getOrder(entry.id).catch(() => null)));
+      const extras = await Promise.all(
+        candidates.map((entry) => getOrder(entry.id, stored?.token).catch(() => null)),
+      );
       const history = mergeSessionHistory(
         serverOrders,
         summary,

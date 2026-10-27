@@ -12,8 +12,10 @@ export function createOrder(body: CreateOrderBody) {
   return requestWithToken<OrderDto>("/orders", { method: "POST", body: JSON.stringify(body) });
 }
 
-export function getOrder(orderId: string) {
-  return requestWithToken<OrderDto>(`/orders/${encodeURIComponent(orderId)}`);
+export function getOrder(orderId: string, sessionToken?: string) {
+  return requestWithToken<OrderDto>(`/orders/${encodeURIComponent(orderId)}`, {
+    headers: sessionToken ? { "x-session-token": sessionToken } : undefined,
+  });
 }
 
 /**

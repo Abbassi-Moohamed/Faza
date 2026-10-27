@@ -13,7 +13,8 @@ import type { OrderDto } from "@/types/backend";
  *
  * Events mirror the backend contract (`src/realtime/realtime.ts`):
  *   server → client: "order:new" / "order:updated" (OrderDto payload)
- *   client → server: "order:subscribe" / "order:unsubscribe" (orderId)
+ *   client → server: "order:subscribe" (orderId, sessionToken?) /
+ *                    "order:unsubscribe" (orderId)
  *   client → server: "session:subscribe" / "session:unsubscribe" (sessionToken)
  */
 
@@ -23,7 +24,11 @@ interface ServerToClientEvents {
 }
 
 interface ClientToServerEvents {
-  "order:subscribe": (orderId: string, ack?: (result: { joined: boolean }) => void) => void;
+  "order:subscribe": (
+    orderId: string,
+    sessionToken?: string,
+    ack?: (result: { joined: boolean }) => void,
+  ) => void;
   "order:unsubscribe": (orderId: string) => void;
   "session:subscribe": (sessionToken: string, ack?: (result: { joined: boolean }) => void) => void;
   "session:unsubscribe": (sessionToken: string) => void;

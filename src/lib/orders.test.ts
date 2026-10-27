@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "@/lib/api";
-import { listSessionOrders } from "@/lib/orders";
+import { getOrder, listSessionOrders } from "@/lib/orders";
 
 const okResponse = (body: unknown) =>
   ({
@@ -41,6 +41,17 @@ describe("session orders API", () => {
     const [url] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain("sessionToken=token-123");
     expect(url).toContain("limit=10");
+  });
+
+  it("sends the table session token when reading one order", async () => {
+    const fetchMock = vi.fn(async () => okResponse({ success: true, data: { id: "order-1" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getOrder("order-1", "token-123");
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain("/api/v1/orders/order-1");
+    expect(new Headers(init.headers).get("x-session-token")).toBe("token-123");
   });
 
   it("unwraps the envelope", async () => {
