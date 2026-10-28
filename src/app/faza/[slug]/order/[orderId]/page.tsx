@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { getDictionary } from "@/i18n";
+import { ApiClientError } from "@/lib/api";
 import { formatPrice } from "@/lib/menu";
 import { getOrder, listSessionOrders } from "@/lib/orders";
 import { getRealtimeSocket } from "@/lib/realtime";
@@ -25,7 +26,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const d = getDictionary();
   const [order, setOrder] = useState<OrderDto | null>(null);
   const [sessionOrders, setSessionOrders] = useState<OrderDto[]>([]);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [slug, setSlug] = useState("");
   const [orderId, setOrderId] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -36,6 +37,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
     void params.then(({ slug: nextSlug, orderId: nextId }) => {
       setSlug(nextSlug);
       setOrderId(nextId);
+      setError(null);
       return getOrder(nextId, readTableSession(nextSlug)?.token)
         .then((value) => {
           if (active) {
@@ -43,14 +45,17 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
             setOrder(value);
           }
         })
-        .catch(() => {
-          if (active) setError(true);
+        .catch((cause: unknown) => {
+          if (active)
+            setError(
+              cause instanceof ApiClientError && cause.status === 404 ? d.order.orderNotFound : d.order.orderLoadError,
+            );
         });
     });
     return () => {
       active = false;
     };
-  }, [params]);
+  }, [params, d.order.orderLoadError, d.order.orderNotFound]);
 
   // The other orders of the same table session — the visitor keeps a single
   // ticket per order, the session is the bill.
@@ -113,13 +118,15 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
   const refresh = async () => {
     if (!orderId || refreshing) return;
     setRefreshing(true);
-    setError(false);
+    setError(null);
     try {
       const latestOrder = await getOrder(orderId, readTableSession(slug)?.token);
       previousStatusRef.current = latestOrder.status;
       setOrder(latestOrder);
-    } catch {
-      setError(true);
+    } catch (cause) {
+      setError(
+        cause instanceof ApiClientError && cause.status === 404 ? d.order.orderNotFound : d.order.orderLoadError,
+      );
     } finally {
       setRefreshing(false);
     }
@@ -139,7 +146,12 @@ export default function OrderStatusPage({ params }: { params: Promise<{ slug: st
         </p>
         <h1>{order ? d.order.confirmationTitle : d.order.status}</h1>
         {error ? (
-          <p className="admin-form__error">{d.order.orderNotFound}</p>
+          <div className="admin-form__error" role="alert">
+            <p>{error}</p>
+            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void refresh()}>
+              {d.order.refresh}
+            </button>
+          </div>
         ) : order ? (
           <>
             <div className={`order-ticket${order.status === "CONFIRMED" ? " order-ticket--confirmed" : ""}`}>

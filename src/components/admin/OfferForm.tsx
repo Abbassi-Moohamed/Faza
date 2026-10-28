@@ -231,8 +231,8 @@ export function OfferForm({ dict, title, items, initial, busy, error, onSubmit, 
         endAt: endAt ? new Date(endAt).toISOString() : null,
         isActive,
       });
-    } catch (uploadError) {
-      setFieldError(uploadError instanceof Error ? uploadError.message : t.uploadFailed);
+    } catch {
+      setFieldError(t.uploadFailed);
     } finally {
       setSubmitting(false);
     }

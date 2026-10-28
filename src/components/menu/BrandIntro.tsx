@@ -64,8 +64,8 @@ export function BrandIntro({
                 type="button"
                 className="brand-intro__reset"
                 onClick={onReset}
-                aria-label="Réinitialiser la position des catégories"
-                title="Réinitialiser la scène"
+                aria-label={dict.explore.resetCategories}
+                title={dict.explore.resetScene}
               >
                 <span aria-hidden="true">↻</span>
               </button>

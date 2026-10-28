@@ -458,7 +458,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
         cover: values.cover,
       });
       setCoffee(updated);
-      setNotice(d.delete.deleted ? d.delete.deleted(updated.name) : updated.name);
+      setNotice(d.coffeeForm.updated(updated.name));
     } catch (error) {
       if (isSessionFailure(error)) {
         handleExpired();
@@ -738,7 +738,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
               </button>
               <div className="admin-head">
                 <div className="admin-head__text">
-                  <p className="admin-head__hint">Catégorie</p>
+                  <p className="admin-head__hint">{d.categories.categoryLabel}</p>
                   <h2 className="admin-head__title">{activeCategory.name}</h2>
                   <p className="admin-head__hint">
                     Consultez les articles de cette catégorie ou ajoutez-en un nouveau.

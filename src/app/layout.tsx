@@ -70,7 +70,7 @@ export default function RootLayout({
           <a className="skip-link sr-only" href="#main">
             {dict.a11y.skipLink}
           </a>
-          <Header myOrdersLabel={dict.order.myOrders} />
+          <Header myOrdersLabel={dict.order.myOrders} brandLabel={dict.explore.eyebrow} />
         </PublicChrome>
         {children}
         <PublicChrome>

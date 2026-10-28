@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { listOrders, markOrderPaid, updateOrderStatus } from "@/lib/orders";
 import { getAdminRealtimeSocket } from "@/lib/realtime";
+import { actionError } from "@/lib/admin-errors";
 import {
   orderItemsLabel,
   orderMoment,
@@ -27,11 +28,15 @@ import {
 import type { AdminTableDto, AdminTableOrderDto, OrderDto, OrderStatus, ServiceShiftDto } from "@/types/backend";
 import { AdminConfirmDialog } from "./AdminConfirmDialog";
 
+const serviceCopy = getDictionary().admin.service;
+
+const userFacingActionError = (error: unknown) => actionError(getDictionary(), error);
+
 const firstShiftLabel = (shift: ServiceShiftDto | null) => {
   if (!shift) return "";
-  if (shift.type === "MORNING") return "☀️ Service du matin";
-  if (shift.type === "AFTERNOON") return "🌤 Service de l'après-midi";
-  return shift.label ?? shift.name ?? "Service";
+  if (shift.type === "MORNING") return `☀️ ${serviceCopy.morning}`;
+  if (shift.type === "AFTERNOON") return `🌤 ${serviceCopy.afternoon}`;
+  return shift.label ?? shift.name ?? serviceCopy.serviceLabel;
 };
 
 const serviceDateTime = (value: string, includeDate = true) =>
@@ -88,7 +93,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         setOrders(result.orders);
         setNewOrdersAvailable(0);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Erreur"));
+      .catch((e) => setError(userFacingActionError(e)));
   }, [token, filter, paymentFilter, section]);
 
   const loadShiftData = useCallback(async () => {
@@ -105,11 +110,9 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       setCurrentShift(shift);
       setTables(tableList.tables);
       setHistory(historyResult.shifts.filter((item) => item.id !== shift?.id));
-    } catch {
+    } catch (e) {
       if (generation !== serviceRefreshSequence) return;
-      setCurrentShift(null);
-      setTables([]);
-      setHistory([]);
+      setError(userFacingActionError(e));
     }
   }, [token, serviceView]);
 
@@ -229,7 +232,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         setNoActiveServiceOrder(id);
         return;
       }
-      setError(e instanceof Error ? e.message : "La commande n'a pas pu être mise à jour.");
+      setError(actionError(dict, e));
     } finally {
       setOrderBusy(null);
     }
@@ -238,12 +241,15 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
   const handleOpenShift = async () => {
     if (shiftBusy || !token) return;
     setShiftBusy(true);
+    setError(null);
     try {
       await openServiceShift(token, {
         type: shiftType,
         name: shiftType === "MORNING" ? serviceDict.morning : serviceDict.afternoon,
       });
       await loadShiftData();
+    } catch (e) {
+      setError(actionError(dict, e));
     } finally {
       setShiftBusy(false);
     }
@@ -280,7 +286,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         );
         return;
       }
-      setError(e instanceof Error ? e.message : "Le service n'a pas pu être clôturé.");
+      setError(actionError(dict, e));
     } finally {
       setCloseShiftBusy(false);
     }
@@ -302,7 +308,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       if (paymentTableNumber !== null) await refreshTablePayment(paymentTableNumber);
       await loadShiftData();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Impossible d'enregistrer le paiement.");
+      setError(actionError(dict, e));
     } finally {
       setPaymentBusy(false);
     }
@@ -350,7 +356,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
         setNoActiveServiceOrder(order.id);
         return;
       }
-      setError(e instanceof Error ? e.message : "La commande n'a pas pu être mise à jour.");
+      setError(actionError(dict, e));
     } finally {
       setOrderBusy(null);
     }
@@ -430,7 +436,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     try {
       const table = await fetchTable(tableNumber);
       if (!table) {
-        setError("Cette table n'est plus ouverte.");
+        setError(serviceDict.tableClosed);
         return;
       }
       if (pendingTableOrders(table).length > 0 || unpaidTableOrders(table).length > 0) {
@@ -451,7 +457,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       if (e instanceof ApiClientError && e.status === 409) {
         await refreshTablePayment(tableNumber);
       } else {
-        setError(e instanceof Error ? e.message : "La table n'a pas pu être clôturée.");
+        setError(actionError(dict, e));
       }
     } finally {
       setCloseTableBusy(null);
@@ -477,7 +483,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
     <section className="admin-section">
       {error ? <p className="admin-form__error">{error}</p> : null}
       {section === "service" ? (
-        <div className="service-view-toggle" role="tablist" aria-label="Service">
+        <div className="service-view-toggle" role="tablist" aria-label={serviceDict.serviceLabel}>
           <button
             type="button"
             role="tab"
@@ -485,7 +491,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             className={serviceView === "current" ? "is-active" : ""}
             onClick={() => setServiceView("current")}
           >
-            Service actuel
+            {serviceDict.currentTab}
           </button>
           <button
             type="button"
@@ -494,7 +500,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             className={serviceView === "history" ? "is-active" : ""}
             onClick={() => setServiceView("history")}
           >
-            Historique
+            {serviceDict.historyTab}
           </button>
         </div>
       ) : null}
@@ -512,19 +518,25 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           {currentShift ? (
             <>
               <strong>{firstShiftLabel(currentShift)}</strong>
-              <div className="service-live-label">● Live · {serviceDict.statusOpen}</div>
+              <div className="service-live-label">
+                ● {serviceDict.liveLabel} · {serviceDict.statusOpen}
+              </div>
               <div className="service-current-metrics">
                 <span>
-                  <strong>{(currentSummary?.paidRevenue ?? 0).toFixed(3)} DT</strong>Chiffre d&apos;affaires
+                  <strong>{(currentSummary?.paidRevenue ?? 0).toFixed(3)} DT</strong>
+                  {serviceDict.revenueLabel}
                 </span>
                 <span>
-                  <strong>{currentSummary?.totalOrders ?? 0}</strong>Commandes
+                  <strong>{currentSummary?.totalOrders ?? 0}</strong>
+                  {serviceDict.ordersLabel}
                 </span>
                 <span>
-                  <strong>{tables.length}</strong>Tables actives
+                  <strong>{tables.length}</strong>
+                  {serviceDict.activeTables}
                 </span>
                 <span>
-                  <strong>{currentSummary?.paidOrders ?? 0}</strong>Commandes payées
+                  <strong>{currentSummary?.paidOrders ?? 0}</strong>
+                  {serviceDict.paidOrdersLabel}
                 </span>
               </div>
               <div style={{ marginTop: "0.5rem" }}>
@@ -543,7 +555,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               <strong>{serviceDict.noShift}</strong>
               <div style={{ marginTop: "0.75rem" }}>
                 <label className="admin-field" style={{ marginBottom: 0 }}>
-                  <span className="admin-field__label">Type</span>
+                  <span className="admin-field__label">{serviceDict.typeLabel}</span>
                   <select
                     className="admin-field__input"
                     value={shiftType}
@@ -670,12 +682,12 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               <select
                 className="admin-field__input"
                 value={paymentFilter}
-                aria-label="Filtrer par paiement"
+                aria-label={d.paymentFilterLabel}
                 onChange={(e) => setPaymentFilter(e.target.value as "ALL" | "PAID" | "UNPAID")}
               >
-                <option value="ALL">Tous</option>
-                <option value="PAID">Payées</option>
-                <option value="UNPAID">Non payées</option>
+                <option value="ALL">{d.allPayments}</option>
+                <option value="PAID">{d.paid}</option>
+                <option value="UNPAID">{d.unpaid}</option>
               </select>
             ) : null}
             <button
@@ -711,13 +723,13 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   <span>
                     {order.status === "CONFIRMED"
                       ? order.paymentStatus === "PAID"
-                        ? "✓ Payée"
-                        : "○ Non payée"
-                      : "○ Non payée"}
+                        ? `✓ ${d.paid}`
+                        : `○ ${d.unpaid}`
+                      : `○ ${d.unpaid}`}
                   </span>
                   {order.paidAt ? (
                     <small>
-                      Payée à{" "}
+                      {d.paidAt}{" "}
                       {new Date(order.paidAt).toLocaleTimeString("fr-TN", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -736,7 +748,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                     <div className="order-admin-card__item" key={`offer-${offer.offerId}`}>
                       <strong>{offer.quantity}×</strong>
                       <span>
-                        {offer.name} <span className="order-admin-card__offer-tag">Offre</span>
+                        {offer.name} <span className="order-admin-card__offer-tag">{d.offerLabel}</span>
                       </span>
                     </div>
                   ))}
@@ -784,20 +796,20 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           <div className="admin-head__text">
             <h2 className="admin-head__title">{serviceDict.history}</h2>
           </div>
-          <div className="service-history-toggle" role="tablist" aria-label="Période historique">
+          <div className="service-history-toggle" role="tablist" aria-label={serviceDict.historyRangeLabel}>
             <button
               type="button"
               className={historyRange === "today" ? "is-active" : ""}
               onClick={() => setHistoryRange("today")}
             >
-              Aujourd&apos;hui
+              {serviceDict.today}
             </button>
             <button
               type="button"
               className={historyRange === "all" ? "is-active" : ""}
               onClick={() => setHistoryRange("all")}
             >
-              Tous les services
+              {serviceDict.allServices}
             </button>
           </div>
         </div>
@@ -805,7 +817,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       {section === "service" && serviceView === "history" ? (
         historicalServices.length === 0 ? (
           <p className="sheet-state__text">
-            {historyRange === "today" ? "Aucun service précédent aujourd'hui." : "Aucun historique."}
+            {historyRange === "today" ? serviceDict.noHistoryToday : serviceDict.noHistory}
           </p>
         ) : (
           historicalServices.map((shiftItem) => (
@@ -825,25 +837,25 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
               </div>
               <div className="service-history-card__revenue">
                 <strong>{(shiftItem.summary?.paidRevenue ?? 0).toFixed(3)} DT</strong>
-                <span>Chiffre d&apos;affaires</span>
+                <span>{serviceDict.revenueLabel}</span>
               </div>
               <div className="service-history-card__metrics">
                 <span>
                   <strong>{shiftItem.summary?.totalOrders ?? 0}</strong>
-                  Commandes
+                  {serviceDict.ordersLabel}
                 </span>
                 <span>
                   <strong>{shiftItem.summary?.tablesServed ?? 0}</strong>
-                  Tables
+                  {serviceDict.tablesLabel}
                 </span>
                 <span>
                   <strong>{shiftItem.summary?.itemsSold ?? 0}</strong>
-                  Articles vendus
+                  {dict.admin.insights.metrics.itemsSold}
                 </span>
               </div>
               <div className="service-history-card__secondary">
                 <span>
-                  Panier moyen{" "}
+                  {serviceDict.averageBasket}{" "}
                   <strong>
                     {shiftItem.summary?.paidOrders
                       ? ((shiftItem.summary.paidRevenue ?? 0) / shiftItem.summary.paidOrders).toFixed(3)
@@ -852,7 +864,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   </strong>
                 </span>
                 <span>
-                  Commandes / table{" "}
+                  {serviceDict.ordersPerTable}{" "}
                   <strong>
                     {shiftItem.summary?.tablesServed
                       ? ((shiftItem.summary.totalOrders ?? 0) / shiftItem.summary.tablesServed).toFixed(1)
@@ -883,10 +895,10 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
             </h3>
             <p id="table-payment-description" className="admin-dialog__text">
               {tablePendingOrders.length > 0
-                ? "Confirmez ou refusez les commandes en attente."
+                ? serviceDict.settlementPending
                 : tableUnpaidOrders.length > 0
-                  ? "Encaissez les commandes confirmées avant de clôturer."
-                  : "Toutes les commandes confirmées de cette table sont payées."}
+                  ? serviceDict.settlementUnpaid
+                  : serviceDict.settlementPaid}
             </p>
             <dl className="admin-table-card__stats admin-table-card__stats--compact">
               <div className={tableDue > 0 ? "is-due" : ""}>
@@ -910,7 +922,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                 onClick={() => setTablePayment(null)}
                 disabled={paymentBusy}
               >
-                Fermer
+                {serviceDict.cancel}
               </button>
               {tablePendingOrders.length === 0 && tableUnpaidOrders.length === 0 ? (
                 <button
@@ -930,11 +942,15 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
       ) : null}
       {paymentTarget ? (
         <AdminConfirmDialog
-          title="Confirmer le paiement ?"
-          message={`Commande ${paymentTarget.id.slice(-6)} · Table ${paymentTarget.tableNumber} · ${paymentTarget.total.toFixed(3)} DT. Le client a-t-il bien payé ce montant ?`}
-          confirmLabel="Confirmer le paiement"
-          cancelLabel="Annuler"
-          busyLabel="Enregistrement…"
+          title={serviceDict.confirmPaymentTitle}
+          message={serviceDict.paymentPrompt(
+            paymentTarget.tableNumber,
+            paymentTarget.id.slice(-6),
+            paymentTarget.total.toFixed(3),
+          )}
+          confirmLabel={serviceDict.confirmPayment}
+          cancelLabel={serviceDict.cancel}
+          busyLabel={serviceDict.paymentSaved}
           busy={paymentBusy}
           onConfirm={() => void handlePayment()}
           onCancel={() => setPaymentTarget(null)}
@@ -951,10 +967,10 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           <div className="admin-dialog__scrim" onClick={() => setNoActiveServiceOrder(null)} aria-hidden="true" />
           <div className="admin-dialog__card">
             <h3 id="no-active-service-title" className="admin-dialog__title">
-              Aucun service actif
+              {serviceDict.noActiveServiceTitle}
             </h3>
             <p id="no-active-service-description" className="admin-dialog__text">
-              Vous devez commencer un service avant de pouvoir confirmer cette commande.
+              {serviceDict.noActiveServiceMessage}
             </p>
             <div className="admin-dialog__actions">
               <button
@@ -962,7 +978,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                 className="admin-btn admin-btn--ghost"
                 onClick={() => setNoActiveServiceOrder(null)}
               >
-                Annuler
+                {serviceDict.cancel}
               </button>
               <button
                 type="button"
@@ -972,7 +988,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   onStartService();
                 }}
               >
-                Commencer un service
+                {serviceDict.startService}
               </button>
             </div>
           </div>
@@ -993,29 +1009,27 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
           />
           <div className="admin-dialog__card admin-service-close-dialog">
             <h3 id="service-close-title" className="admin-dialog__title">
-              Impossible de clôturer le service
+              {serviceDict.closeServiceTitle}
             </h3>
             <p id="service-close-description" className="admin-dialog__text">
-              Certaines tables sont encore ouvertes. Veuillez d&apos;abord les clôturer.
+              {serviceDict.closeServiceMessage}
             </p>
             {serviceCloseTables.length === 0 ? (
               <div className="admin-service-close-dialog__ready">
-                <strong>Toutes les tables sont clôturées.</strong>
-                <span>Le service peut maintenant être clôturé.</span>
+                <strong>{serviceDict.allTablesClosed}</strong>
+                <span>{serviceDict.serviceCanClose}</span>
               </div>
             ) : (
               <>
                 <strong className="admin-service-close-dialog__label">
-                  Tables encore ouvertes ({serviceCloseTables.length})
+                  {serviceDict.openTablesCount(serviceCloseTables.length)}
                 </strong>
                 <div className="admin-service-close-dialog__tables">
                   {serviceCloseTables.map((table) => (
                     <div className="admin-service-close-dialog__table" key={table.tableNumber}>
                       <div>
-                        <strong>Table {table.tableNumber}</strong>
-                        <span>
-                          {table.orders} commande{table.orders > 1 ? "s" : ""} · {table.revenue.toFixed(3)} DT
-                        </span>
+                        <strong>{serviceDict.tableLabel(table.tableNumber)}</strong>
+                        <span>{serviceDict.tableOrdersAndRevenue(table.orders, table.revenue.toFixed(3))}</span>
                       </div>
                       <button
                         type="button"
@@ -1026,7 +1040,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                         }}
                         disabled={closeTableBusy !== null}
                       >
-                        {closeTableBusy === table.tableNumber ? "Vérification…" : serviceDict.closeTable}
+                        {closeTableBusy === table.tableNumber ? serviceDict.verifyingTable : serviceDict.closeTable}
                       </button>
                     </div>
                   ))}
@@ -1040,7 +1054,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                 onClick={() => setServiceCloseTables(null)}
                 disabled={closeTableBusy !== null}
               >
-                Fermer
+                {serviceDict.cancel}
               </button>
               {serviceCloseTables.length === 0 ? (
                 <button
@@ -1052,7 +1066,7 @@ export function OrdersSection({ token, section, onStartService }: OrdersSectionP
                   }}
                   disabled={closeShiftBusy}
                 >
-                  {closeShiftBusy ? "Clôture…" : "Clôturer le service"}
+                  {closeShiftBusy ? serviceDict.closing : serviceDict.closeService}
                 </button>
               ) : null}
             </div>

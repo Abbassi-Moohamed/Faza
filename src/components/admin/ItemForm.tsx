@@ -132,9 +132,9 @@ export function ItemForm({
           alt: entry.alt ?? undefined,
         })),
       });
-    } catch (submitError) {
+    } catch {
       savedRef.current = false;
-      setFieldError(submitError instanceof Error ? submitError.message : t.uploadFailed);
+      setFieldError(t.uploadFailed);
     } finally {
       setSubmitting(false);
     }

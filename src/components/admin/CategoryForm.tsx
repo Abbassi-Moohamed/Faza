@@ -55,8 +55,8 @@ export function CategoryForm({
     try {
       const uploadedImage = file ? await onUpload(file) : image.trim();
       await onSubmit({ name: trimmed, image: uploadedImage || undefined });
-    } catch (submitError) {
-      setFieldError(submitError instanceof Error ? submitError.message : t.uploadFailed);
+    } catch {
+      setFieldError(t.uploadFailed);
     } finally {
       setSubmitting(false);
     }

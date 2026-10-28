@@ -100,8 +100,8 @@ export function ItemMediaManager({
           },
         ];
         onChange(next);
-      } catch (uploadError) {
-        firstError ??= uploadError instanceof Error ? uploadError.message : t.mediaUploadFailed;
+      } catch {
+        firstError ??= t.mediaUploadFailed;
       }
     }
 

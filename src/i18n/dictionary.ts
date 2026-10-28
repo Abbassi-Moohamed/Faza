@@ -19,6 +19,7 @@ export interface Dictionary {
     submitting: string;
     invalidCheckout: string;
     submitError: string;
+    unavailableAtCheckout: string;
     sessionInProgress: string;
     sessionExpired: string;
     itemAddedAnnounce: (name: string) => string;
@@ -34,6 +35,7 @@ export interface Dictionary {
     paymentPaid: string;
     refresh: string;
     orderNotFound: string;
+    orderLoadError: string;
     statusUpdatedAnnounce: (label: string) => string;
     myOrders: string;
     noOrders: string;
@@ -79,6 +81,8 @@ export interface Dictionary {
   explore: {
     eyebrow: string;
     title: string;
+    resetCategories: string;
+    resetScene: string;
     menuSummaryAriaLabel: string;
     categoriesLabel: (count: number) => string;
     itemsLabel: (count: number) => string;
@@ -114,6 +118,8 @@ export interface Dictionary {
     label: string;
   };
   footer: {
+    tagline: string;
+    poweredBy: string;
     note: string;
     noteCta: string;
     noteCtaStrong: string;
@@ -224,6 +230,7 @@ export interface Dictionary {
       createTitle: string;
       editTitle: string;
       name: string;
+      categoryLabel: string;
       namePlaceholder: string;
       nameRequired: string;
       image: string;
@@ -410,12 +417,52 @@ export interface Dictionary {
       live: string;
       offline: string;
       newOrders: (count: number) => string;
+      paymentFilterLabel: string;
+      allPayments: string;
+      paid: string;
+      unpaid: string;
+      paidAt: string;
+      offerLabel: string;
     };
     settings: {
       title: string;
       intro: string;
     };
     service: {
+      serviceLabel: string;
+      currentTab: string;
+      historyTab: string;
+      historyRangeLabel: string;
+      today: string;
+      allServices: string;
+      noHistoryToday: string;
+      noHistory: string;
+      revenueLabel: string;
+      ordersLabel: string;
+      paidOrdersLabel: string;
+      tablesLabel: string;
+      averageBasket: string;
+      ordersPerTable: string;
+      typeLabel: string;
+      liveLabel: string;
+      noActiveServiceTitle: string;
+      noActiveServiceMessage: string;
+      closeServiceTitle: string;
+      closeServiceMessage: string;
+      allTablesClosed: string;
+      serviceCanClose: string;
+      openTablesCount: (count: number) => string;
+      tableLabel: (number: number) => string;
+      tableOrdersAndRevenue: (orders: number, revenue: string) => string;
+      paymentPrompt: (tableNumber: number, orderId: string, total: string) => string;
+      confirmPaymentTitle: string;
+      confirmPayment: string;
+      paymentSaved: string;
+      settlementPending: string;
+      settlementUnpaid: string;
+      settlementPaid: string;
+      tableClosed: string;
+      verifyingTable: string;
       currentTitle: string;
       openShift: string;
       noShift: string;

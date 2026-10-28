@@ -141,7 +141,7 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
       return;
     }
     if (validLines.length === 0) {
-      setError(d.menuItem.unavailable);
+      setError(d.order.unavailableAtCheckout);
       return;
     }
 
@@ -186,7 +186,7 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
         setOpen(true);
         return;
       }
-      setError(e instanceof Error ? e.message : d.order.submitError);
+      setError(status === 409 ? d.order.unavailableAtCheckout : d.order.submitError);
     } finally {
       setBusy(false);
     }

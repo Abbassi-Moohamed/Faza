@@ -169,8 +169,8 @@ export function CoffeeForm({
         cover: uploadedCover || undefined,
         slug: slugReadOnly ? (initialSlug ?? trimmedSlug) : trimmedSlug,
       });
-    } catch (error) {
-      setFieldError(error instanceof Error ? error.message : t.logoUploadFailed);
+    } catch {
+      setFieldError(t.logoUploadFailed);
     } finally {
       setSubmitting(false);
     }

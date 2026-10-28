@@ -10,9 +10,10 @@ import { readSessionOrders } from "@/lib/session-orders";
 
 interface HeaderProps {
   myOrdersLabel: string;
+  brandLabel: string;
 }
 
-export function Header({ myOrdersLabel }: HeaderProps) {
+export function Header({ myOrdersLabel, brandLabel }: HeaderProps) {
   const pathname = usePathname();
   const [orderCount, setOrderCount] = useState(0);
   const pathParts = pathname.split("/").filter(Boolean);
@@ -40,7 +41,7 @@ export function Header({ myOrdersLabel }: HeaderProps) {
       <div className="container site-header__inner">
         <a className="site-header__brand" href="#top" aria-label={siteConfig.name}>
           <span className="menu-card" aria-hidden="true">
-            <span className="menu-card__title">Menu Digitale</span>
+            <span className="menu-card__title">{brandLabel}</span>
           </span>
         </a>
         <span className="site-header__spacer" aria-hidden="true" />
