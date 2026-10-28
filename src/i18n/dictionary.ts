@@ -67,10 +67,10 @@ export interface Dictionary {
     emptyCta: string;
     details: string;
     composition: string;
-    availability: string;
-    availableFrom: (date: string) => string;
-    availableUntil: (date: string) => string;
-    availableToday: (time: string) => string;
+    startsIn: (duration: string) => string;
+    endsIn: (duration: string) => string;
+    availableNow: string;
+    ended: string;
     whileStock: string;
     inCart: (count: number) => string;
   };

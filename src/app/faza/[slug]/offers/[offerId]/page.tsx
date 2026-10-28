@@ -10,53 +10,10 @@ import { getCoffeeOffers } from "@/lib/api";
 import { offerImage } from "@/lib/cart";
 import { formatPrice } from "@/lib/menu";
 import { resolvePublicCoffee } from "@/lib/public-coffee";
+import { OfferCountdown } from "@/components/offers/OfferCountdown";
 
 interface OfferPageProps {
   params: Promise<{ slug: string; offerId: string }>;
-}
-
-const dayFormatter = new Intl.DateTimeFormat(siteConfig.locale, {
-  day: "numeric",
-  month: "long",
-  timeZone: siteConfig.timeZone,
-});
-const timeFormatter = new Intl.DateTimeFormat(siteConfig.locale, {
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  timeZone: siteConfig.timeZone,
-});
-const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: siteConfig.timeZone,
-});
-
-function formatOfferWindow(startAt: string | null, endAt: string | null): string {
-  const d = getDictionary();
-  const start = startAt ? new Date(startAt) : null;
-  const end = endAt ? new Date(endAt) : null;
-  const sameDay = start && end ? dayKeyFormatter.format(start) === dayKeyFormatter.format(end) : false;
-
-  if (start && end && sameDay) {
-    return d.offer.availableToday(timeFormatter.format(end));
-  }
-  if (start && end) {
-    return `${d.offer.availableFrom(`${dayFormatter.format(start)} à ${timeFormatter.format(start)}`)} · ${d.offer.availableUntil(
-      `${dayFormatter.format(end)} à ${timeFormatter.format(end)}`,
-    )}`;
-  }
-  if (start) {
-    return d.offer.availableFrom(`${dayFormatter.format(start)} à ${timeFormatter.format(start)}`);
-  }
-  if (end) {
-    const isToday = dayKeyFormatter.format(end) === dayKeyFormatter.format(new Date());
-    return isToday
-      ? d.offer.availableToday(timeFormatter.format(end))
-      : d.offer.availableUntil(`${dayFormatter.format(end)} à ${timeFormatter.format(end)}`);
-  }
-  return d.offer.whileStock;
 }
 
 export async function generateMetadata({ params }: OfferPageProps): Promise<Metadata> {
@@ -84,7 +41,6 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
   const image = offerImage(offer);
   const savings = offer.originalPrice - offer.price;
-  const availability = formatOfferWindow(offer.startAt, offer.endAt);
 
   return (
     <main id="main">
@@ -129,12 +85,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
 
         <OfferCartActions coffeeSlug={slug} offer={offer} />
 
-        <dl className="offer-detail__meta">
-          <div className="offer-detail__meta-row">
-            <dt>{d.offer.availability}</dt>
-            <dd>{availability}</dd>
-          </div>
-        </dl>
+        <OfferCountdown startAt={offer.startAt} endAt={offer.endAt} />
 
         <section className="offer-detail__composition" aria-labelledby="offer-composition-title">
           <h2 id="offer-composition-title" className="offer-detail__section-title">

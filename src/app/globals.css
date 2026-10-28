@@ -6019,6 +6019,74 @@ img {
   color: var(--color-mocha-500);
 }
 
+.offer-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-amber-600) 25%, var(--color-line));
+  border-radius: var(--radius-md);
+  background: linear-gradient(110deg, var(--color-amber-100), #fffaf0);
+  color: var(--color-espresso-800);
+  font-size: 0.9rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.offer-countdown__icon {
+  flex: none;
+  color: var(--color-amber-600);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.offer-countdown--ends {
+  border-color: color-mix(in srgb, var(--color-amber-600) 35%, var(--color-line));
+}
+
+.offer-countdown--urgent {
+  border-color: color-mix(in srgb, #b83c2e 42%, var(--color-line));
+  background: #fff0ec;
+  color: #8f2d22;
+}
+
+.offer-countdown--urgent .offer-countdown__icon {
+  color: #b83c2e;
+}
+
+.offer-countdown--starts {
+  border-color: color-mix(in srgb, var(--color-green-700) 25%, var(--color-line));
+  background: color-mix(in srgb, var(--color-green-100) 70%, white);
+  color: var(--color-green-700);
+}
+
+.offer-countdown--starts .offer-countdown__icon,
+.offer-countdown--available .offer-countdown__icon {
+  color: var(--color-green-700);
+}
+
+.offer-countdown--ended {
+  border-color: var(--color-line);
+  background: var(--color-cream-100);
+  color: var(--color-mocha-500);
+}
+
+.offer-countdown--compact {
+  gap: 0.35rem;
+  margin: 0.3rem 0 0;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.offer-countdown--compact .offer-countdown__icon {
+  font-size: 0.9rem;
+}
+
 .offer-card-link__foot {
   display: flex;
   align-items: center;

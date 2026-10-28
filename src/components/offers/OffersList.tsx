@@ -6,6 +6,7 @@ import { offerImage } from "@/lib/cart";
 import { formatPrice } from "@/lib/menu";
 import type { FeaturedOfferDto } from "@/types/backend";
 import { OfferCartActions } from "./OfferCartActions";
+import { OfferCountdown } from "./OfferCountdown";
 
 interface OffersListProps {
   coffeeSlug: string;
@@ -58,6 +59,7 @@ export function OffersList({ coffeeSlug, offers }: OffersListProps) {
                     .map((line) => `${line.quantity > 1 ? `${line.quantity}x ` : ""}${line.name}`)
                     .join(" + ")}
                 </p>
+                <OfferCountdown startAt={offer.startAt} endAt={offer.endAt} compact />
                 <div className="offer-card-link__foot">
                   <span className="offer-card-link__prices">
                     <span className="offer-card-link__price">
