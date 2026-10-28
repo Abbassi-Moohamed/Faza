@@ -5,8 +5,8 @@
   `src/lib/realtime.ts`.
 - **French-only UI**: all copy is in one French dictionary; there is no
   language switcher and no per-coffee `defaultLanguage` in the backend.
-- **No frontend security headers**: `next.config.ts` does not configure CSP,
-  HSTS, frame, or referrer-policy headers.
+- **No Content Security Policy**: `next.config.ts` configures transport,
+  framing, referrer, and permissions headers, but does not define a CSP.
 - **Analytics comment mismatch**: `getAppAnalytics` names `/admin/analytics` in
   a comment, but the implemented endpoint is `/admin/insights`.
 - **Synthetic insights**: the dashboard displays backend insights that include

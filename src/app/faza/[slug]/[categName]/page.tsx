@@ -48,17 +48,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  let items;
-  try {
-    items = await getItemsByCategoryId(category.id);
-  } catch (error) {
-    if (error instanceof ApiClientError && (error.status === 404 || error.status === 400)) {
-      notFound();
-    }
-    throw error;
-  }
-
-  const offers = await getCoffeeOffers(slug).catch(() => []);
+  const [items, offers] = await Promise.all([
+    getItemsByCategoryId(category.id).catch((error: unknown) => {
+      if (error instanceof ApiClientError && (error.status === 404 || error.status === 400)) {
+        notFound();
+      }
+      throw error;
+    }),
+    getCoffeeOffers(slug).catch(() => []),
+  ]);
   const menuItems = items.map(toMenuItem);
 
   return (
