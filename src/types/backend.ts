@@ -384,6 +384,23 @@ export interface AnalyticsDto {
   revenueTrend: Array<{ bucket: string; revenue: number; orders: number }>;
   orderTrend: Array<{ bucket: string; revenue: number; orders: number }>;
   topItems: Array<{ itemId: string; name: string; quantitySold: number; revenue: number }>;
+  itemEngagement?: Array<{
+    itemId: string;
+    name: string;
+    views: number;
+    confirmedOrders: number;
+    unitsSold: number;
+    viewsSharePercent: number;
+    ordersSharePercent: number | null;
+    interestGapPoints: number | null;
+    ordersPer100Views: number | null;
+  }>;
+  itemEngagementSummary?: {
+    views: number;
+    itemOrders: number;
+    unitsSold: number;
+    ordersPer100Views: number | null;
+  };
   categories: Array<{
     categoryId: string;
     categoryName: string;

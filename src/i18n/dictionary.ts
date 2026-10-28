@@ -107,6 +107,8 @@ export interface Dictionary {
   menuItem: {
     promotion: string;
     unavailable: string;
+    viewDetails: string;
+    hideDetails: string;
     mediaPrevious: string;
     mediaNext: string;
     mediaCount: (index: number, total: number) => string;
@@ -543,6 +545,24 @@ export interface Dictionary {
       retry: string;
       currency: string;
       noData: string;
+      itemEngagementTitle: string;
+      itemEngagementHint: string;
+      itemEngagementEmpty: string;
+      itemEngagementViews: string;
+      itemEngagementOrders: string;
+      itemEngagementOrdersHint: string;
+      itemEngagementUnits: string;
+      itemEngagementRate: string;
+      itemEngagementRateHint: string;
+      itemViewsShare: string;
+      itemOrdersShare: string;
+      itemInterestGap: string;
+      itemNoOrderComparison: string;
+      itemInterestGapHint: string;
+      itemViews: string;
+      itemOrders: string;
+      itemUnitsSold: string;
+      itemNoViews: string;
       service: string;
       allServices: string;
       customService: string;

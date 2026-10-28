@@ -107,6 +107,8 @@ export const fr: Dictionary = {
   menuItem: {
     promotion: "Promotion",
     unavailable: "Indisponible",
+    viewDetails: "Afficher les détails",
+    hideDetails: "Masquer les détails",
     mediaPrevious: "Visuel précédent",
     mediaNext: "Visuel suivant",
     mediaCount: (index, total) => `Visuel ${index} sur ${total}`,
@@ -545,6 +547,28 @@ export const fr: Dictionary = {
       retry: "Réessayer",
       currency: "DT",
       noData: "Aucune donnée sur cette période.",
+      itemEngagementTitle: "Intérêt pour les articles",
+      itemEngagementHint:
+        "Les ouvertures sont dédupliquées par article et par onglet. Seules les commandes confirmées de l’article vendu seul sont comptées; les compositions d’offres ne sont pas attribuées. Les résultats couvrent des journées UTC complètes, la carte actuelle et tous les services.",
+      itemEngagementEmpty: "Aucune ouverture ni commande d’article sur cette période.",
+      itemEngagementViews: "Ouvertures des détails",
+      itemEngagementOrders: "Commandes article cumulées",
+      itemEngagementOrdersHint:
+        "Une commande avec plusieurs articles est comptée une fois pour chaque article concerné.",
+      itemEngagementUnits: "Unités vendues",
+      itemEngagementRate: "Commandes article pour 100 ouvertures",
+      itemEngagementRateHint:
+        "Indice agrégé, pas un taux de conversion individuel. Une commande peut contenir plusieurs articles.",
+      itemViewsShare: "Part des ouvertures",
+      itemOrdersShare: "Part des articles commandés",
+      itemInterestGap: "Écart intérêt – commandes",
+      itemNoOrderComparison: "Pas encore de commandes pour comparer",
+      itemInterestGapHint:
+        "Écart en points entre la part des ouvertures et celle des commandes contenant l’article. Les écarts positifs apparaissent en premier et peuvent signaler un article à examiner (prix, description ou présentation), sans prouver la cause.",
+      itemViews: "Ouvertures",
+      itemOrders: "Commandes confirmées contenant l’article",
+      itemUnitsSold: "Unités vendues",
+      itemNoViews: "Aucune ouverture",
       service: "Service",
       allServices: "Tous les services",
       customService: "Service personnalisé",

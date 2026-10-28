@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { getDictionary } from "@/i18n";
 import { cartEventName, readCart, writeCart, type CartLine } from "@/lib/cart";
+import { recordMenuItemViewOnce } from "@/lib/item-views";
 import type { MenuItem } from "@/types/menu";
 import type { FeaturedOfferDto } from "@/types/backend";
 import { MenuItemCard } from "@/components/menu/MenuItemCard";
@@ -88,6 +89,7 @@ export function OrderExperience({ coffeeSlug, items, cartItems = items, offers }
                     currency={siteConfig.currency}
                     locale={siteConfig.locale}
                     delay={index * 55}
+                    onView={() => void recordMenuItemViewOnce(coffeeSlug, item.id).catch(() => undefined)}
                   />
                   {quantity > 0 ? (
                     <div

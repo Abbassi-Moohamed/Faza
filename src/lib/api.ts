@@ -110,6 +110,14 @@ export function getCoffeeOffers(coffeeSlug: string): Promise<FeaturedOfferDto[]>
   return request<FeaturedOfferDto[]>(`/coffees/${encodeURIComponent(coffeeSlug)}/offers`);
 }
 
+/** POST /api/v1/coffees/:coffeeSlug/items/:itemId/views */
+export function recordMenuItemView(coffeeSlug: string, itemId: string): Promise<{ recorded: true }> {
+  return request<{ recorded: true }>(
+    `/coffees/${encodeURIComponent(coffeeSlug)}/items/${encodeURIComponent(itemId)}/views`,
+    { method: "POST" },
+  );
+}
+
 /* ------------------------------------------------------------------------ */
 /* Backoffice API (every call carries the admin bearer token explicitly).    */
 /* ------------------------------------------------------------------------ */

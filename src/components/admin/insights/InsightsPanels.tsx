@@ -19,6 +19,7 @@ import { CollectionCard } from "./CollectionCard";
 import { DeadStockCard } from "./DeadStockCard";
 import { EvolutionCard } from "./EvolutionCard";
 import { HighlightList } from "./HighlightList";
+import { ItemEngagementCard } from "./ItemEngagementCard";
 import { MetricGrid } from "./MetricGrid";
 import { PeakSummaryCard } from "./PeakSummaryCard";
 import { RankingList } from "./RankingList";
@@ -212,6 +213,7 @@ export function MenuPanel({ data, d }: PanelProps) {
           availableLabel={d.sections.available}
           unavailableLabel={d.sections.unavailable}
         />
+        <ItemEngagementCard data={data} d={d} />
         <DeadStockCard data={data} d={d} />
       </div>
     </>
