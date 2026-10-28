@@ -6,17 +6,18 @@ import { getDictionary } from "@/i18n";
 import { cartEventName, readCart, setOfferQuantity, writeCart, type CartLine } from "@/lib/cart";
 import type { FeaturedOfferDto } from "@/types/backend";
 
-interface OfferDetailActionsProps {
+interface OfferCartActionsProps {
   coffeeSlug: string;
   offer: FeaturedOfferDto;
+  compact?: boolean;
 }
 
 /**
  * Add-to-cart controls of one offer. The cart lives in localStorage and is
- * shared with the category page, so this component subscribes to the same
+ * shared across menu and offer pages, so this component subscribes to the
  * cart event instead of keeping a second source of truth.
  */
-export function OfferDetailActions({ coffeeSlug, offer }: OfferDetailActionsProps) {
+export function OfferCartActions({ coffeeSlug, offer, compact = false }: OfferCartActionsProps) {
   const d = getDictionary();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [announce, setAnnounce] = useState("");
@@ -44,7 +45,7 @@ export function OfferDetailActions({ coffeeSlug, offer }: OfferDetailActionsProp
   };
 
   return (
-    <div className="offer-actions">
+    <div className={`offer-actions${compact ? " offer-actions--compact" : ""}`}>
       <p className="sr-only" role="status" aria-live="polite">
         {announce}
       </p>

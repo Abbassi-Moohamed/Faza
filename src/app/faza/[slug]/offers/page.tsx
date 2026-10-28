@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { BackLink } from "@/components/layout/BackLink";
 import { OffersList } from "@/components/offers/OffersList";
+import { OrderCenter } from "@/components/ordering/OrderCenter";
 import { getDictionary } from "@/i18n";
 import { getCoffeeOffers } from "@/lib/api";
 import { resolvePublicCoffee } from "@/lib/public-coffee";
@@ -51,6 +52,7 @@ export default async function OffersPage({ params }: OffersPageProps) {
           </div>
         )}
       </section>
+      <OrderCenter coffeeSlug={slug} offers={offers} />
     </main>
   );
 }

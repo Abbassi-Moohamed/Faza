@@ -115,3 +115,8 @@ export function toMenuItem(item: ItemDto): MenuItem {
     media,
   };
 }
+
+/** Convert only purchasable items for the public menu. */
+export function toAvailableMenuItems(items: ItemDto[]): MenuItem[] {
+  return items.filter((item) => item.isAvailable !== false).map(toMenuItem);
+}

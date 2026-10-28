@@ -136,8 +136,12 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
   const submit = async () => {
     const parsedTable = sessionState ? sessionState.tableNumber : Number(tableNumber.trim());
     const validLines = lines.filter((line) => !lineUnavailable(line));
-    if (!Number.isInteger(parsedTable) || parsedTable < 1 || parsedTable > 10000 || validLines.length === 0) {
+    if (!Number.isInteger(parsedTable) || parsedTable < 1 || parsedTable > 10000) {
       setError(d.order.invalidCheckout);
+      return;
+    }
+    if (validLines.length === 0) {
+      setError(d.menuItem.unavailable);
       return;
     }
 

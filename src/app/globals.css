@@ -5776,6 +5776,11 @@ img {
   list-style: none;
 }
 
+.offers-list__item {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .offer-card-link {
   display: flex;
   gap: 0.9rem;
@@ -6034,6 +6039,24 @@ img {
   border: 1px solid color-mix(in srgb, var(--color-amber-600) 24%, var(--color-line));
   border-radius: var(--radius-md);
   background: var(--color-amber-100);
+}
+
+.offer-actions--compact {
+  margin: 0;
+  padding: 0 0.2rem 0.2rem;
+  border: 0;
+  background: transparent;
+}
+
+.offer-actions--compact .offer-actions__add {
+  min-height: 2.4rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+}
+
+.offer-actions--compact .offer-actions__stepper-btn {
+  width: 2.1rem;
+  height: 2.1rem;
 }
 
 .offer-actions__add {

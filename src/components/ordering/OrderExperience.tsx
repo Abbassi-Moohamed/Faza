@@ -13,10 +13,12 @@ import { siteConfig } from "@/config/site";
 interface OrderExperienceProps {
   coffeeSlug: string;
   items: MenuItem[];
+  /** Includes unavailable items so an existing cart can be validated. */
+  cartItems?: MenuItem[];
   offers?: FeaturedOfferDto[];
 }
 
-export function OrderExperience({ coffeeSlug, items, offers }: OrderExperienceProps) {
+export function OrderExperience({ coffeeSlug, items, cartItems = items, offers }: OrderExperienceProps) {
   const d = getDictionary();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [announce, setAnnounce] = useState("");
@@ -123,7 +125,7 @@ export function OrderExperience({ coffeeSlug, items, offers }: OrderExperiencePr
         </ul>
       </div>
 
-      <OrderCenter coffeeSlug={coffeeSlug} items={items} offers={offers} />
+      <OrderCenter coffeeSlug={coffeeSlug} items={cartItems} offers={offers} />
     </>
   );
 }

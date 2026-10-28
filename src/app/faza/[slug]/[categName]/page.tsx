@@ -6,7 +6,7 @@ import { BackLink } from "@/components/layout/BackLink";
 import { CategoryChipsRail } from "@/components/menu/CategoryChipsRail";
 import { OrderExperience } from "@/components/ordering/OrderExperience";
 import { getDictionary } from "@/i18n";
-import { categoryIcon, toMenuItem } from "@/lib/adapters";
+import { categoryIcon, toAvailableMenuItems, toMenuItem } from "@/lib/adapters";
 import { ApiClientError, getCoffeeBySlug, getCoffeeOffers, getItemsByCategoryId } from "@/lib/api";
 import { resolvePublicCoffee } from "@/lib/public-coffee";
 import { categoryHref, slugify } from "@/lib/utils";
@@ -57,7 +57,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     }),
     getCoffeeOffers(slug).catch(() => []),
   ]);
-  const menuItems = items.map(toMenuItem);
+  const menuItems = toAvailableMenuItems(items);
+  const cartItems = items.map(toMenuItem);
 
   return (
     <main id="main">
@@ -93,7 +94,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
 
         {menuItems.length > 0 ? (
-          <OrderExperience coffeeSlug={slug} items={menuItems} offers={offers} />
+          <OrderExperience coffeeSlug={slug} items={menuItems} cartItems={cartItems} offers={offers} />
         ) : (
           <div className="container">
             <div className="sheet-state">

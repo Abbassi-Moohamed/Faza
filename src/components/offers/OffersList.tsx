@@ -5,6 +5,7 @@ import { getDictionary } from "@/i18n";
 import { offerImage } from "@/lib/cart";
 import { formatPrice } from "@/lib/menu";
 import type { FeaturedOfferDto } from "@/types/backend";
+import { OfferCartActions } from "./OfferCartActions";
 
 interface OffersListProps {
   coffeeSlug: string;
@@ -12,9 +13,8 @@ interface OffersListProps {
 }
 
 /**
- * Compact index of the day's offers. Each card is a single link to the offer
- * page: the index stays scannable on a phone while the detail page owns the
- * composition, the window and the add-to-cart controls.
+ * Compact index of the day's offers. Offer details remain a separate link,
+ * while each card can also add its offer directly to the shared cart.
  */
 export function OffersList({ coffeeSlug, offers }: OffersListProps) {
   const d = getDictionary();
@@ -85,6 +85,7 @@ export function OffersList({ coffeeSlug, offers }: OffersListProps) {
                 </div>
               </div>
             </Link>
+            <OfferCartActions coffeeSlug={coffeeSlug} offer={offer} compact />
           </li>
         );
       })}

@@ -17,7 +17,7 @@ export const fr: Dictionary = {
     viewOrder: "Voir ma commande",
     submit: "Envoyer la commande",
     submitting: "Envoi…",
-    invalidCheckout: "Ajoutez un article disponible et indiquez votre numéro de table.",
+    invalidCheckout: "Entrer votre numéro de table.",
     itemAddedAnnounce: (name) => `${name} a été ajouté à la commande.`,
     submitError: "Impossible d'envoyer la commande.",
     sessionInProgress: "Commande en cours",

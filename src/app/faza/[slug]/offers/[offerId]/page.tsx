@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BackLink } from "@/components/layout/BackLink";
-import { OfferDetailActions } from "@/components/offers/OfferDetailActions";
+import { OfferCartActions } from "@/components/offers/OfferCartActions";
+import { OrderCenter } from "@/components/ordering/OrderCenter";
 import { siteConfig } from "@/config/site";
 import { getDictionary } from "@/i18n";
 import { getCoffeeOffers } from "@/lib/api";
@@ -126,7 +127,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
           ) : null}
         </div>
 
-        <OfferDetailActions coffeeSlug={slug} offer={offer} />
+        <OfferCartActions coffeeSlug={slug} offer={offer} />
 
         <dl className="offer-detail__meta">
           <div className="offer-detail__meta-row">
@@ -162,6 +163,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </ul>
         </section>
       </article>
+      <OrderCenter coffeeSlug={slug} offers={offers} />
     </main>
   );
 }
