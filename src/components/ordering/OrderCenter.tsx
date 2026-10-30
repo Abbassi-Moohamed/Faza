@@ -17,7 +17,7 @@ import {
   writeCart,
   type CartLine,
 } from "@/lib/cart";
-import { rememberSessionOrder } from "@/lib/session-orders";
+import { notifySessionOrdersChanged } from "@/lib/session-orders";
 import { clearTableSession, readTableSession, writeTableSession } from "@/lib/table-session";
 import { formatPrice } from "@/lib/menu";
 import { siteConfig } from "@/config/site";
@@ -30,14 +30,28 @@ const activeOrderKey = (coffeeSlug: string) => `faza:active-order:${coffeeSlug}`
 /** Mirrors the cart sheet's closing keyframes in globals.css. */
 const CLOSE_ANIMATION_MS = 260;
 
+function tableNumberLimitFromError(error: unknown): number | null {
+  if (!(error instanceof ApiClientError) || error.status !== 400) return null;
+  if (typeof error.details !== "object" || error.details === null) return null;
+
+  const details = error.details as { code?: unknown; maxTableNumber?: unknown };
+  return details.code === "TABLE_NUMBER_OUT_OF_RANGE" &&
+    typeof details.maxTableNumber === "number" &&
+    Number.isInteger(details.maxTableNumber) &&
+    details.maxTableNumber >= 1
+    ? details.maxTableNumber
+    : null;
+}
+
 interface OrderCenterProps {
   coffeeSlug: string;
+  tableCount?: number | null;
   items?: MenuItem[];
   /** When provided, offer lines are re-checked against the live offers. */
   offers?: FeaturedOfferDto[];
 }
 
-export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps) {
+export function OrderCenter({ coffeeSlug, tableCount, items = [], offers }: OrderCenterProps) {
   const d = getDictionary();
   const router = useRouter();
   const [lines, setLines] = useState<CartLine[]>([]);
@@ -50,6 +64,7 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
   const [sessionState, setSessionState] = useState<ReturnType<typeof readTableSession>>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const maxTableNumber = tableCount ?? 1000;
   const panelRef = useRef<HTMLElement | null>(null);
   const available = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
   const availableOffers = useMemo(() => new Map((offers ?? []).map((offer) => [offer.id, offer])), [offers]);
@@ -136,8 +151,8 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
   const submit = async () => {
     const parsedTable = sessionState ? sessionState.tableNumber : Number(tableNumber.trim());
     const validLines = lines.filter((line) => !lineUnavailable(line));
-    if (!Number.isInteger(parsedTable) || parsedTable < 1 || parsedTable > 10000) {
-      setError(d.order.invalidCheckout);
+    if (!Number.isInteger(parsedTable) || parsedTable < 1 || (!sessionState && parsedTable > maxTableNumber)) {
+      setError(d.order.invalidCheckout(maxTableNumber));
       return;
     }
     if (validLines.length === 0) {
@@ -168,7 +183,7 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
         setTableNumber(String(parsedTable));
       }
       window.localStorage.setItem(activeOrderKey(coffeeSlug), order.id);
-      rememberSessionOrder(coffeeSlug, order.id, parsedTable);
+      notifySessionOrdersChanged(coffeeSlug);
       setLines([]);
       setActiveOrderId(order.id);
       closeDialog();
@@ -184,6 +199,11 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
           d.order.sessionExpired ?? "Votre session de table est terminée. Vous pouvez commencer une nouvelle commande.",
         );
         setOpen(true);
+        return;
+      }
+      const serverTableLimit = tableNumberLimitFromError(e);
+      if (serverTableLimit !== null) {
+        setError(d.order.invalidCheckout(serverTableLimit));
         return;
       }
       setError(status === 409 ? d.order.unavailableAtCheckout : d.order.submitError);
@@ -293,10 +313,13 @@ export function OrderCenter({ coffeeSlug, items = [], offers }: OrderCenterProps
                   <input
                     className="admin-field__input"
                     value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
+                    onChange={(e) => setTableNumber(e.target.value.replace(/\D/g, ""))}
                     inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={String(maxTableNumber).length}
                     placeholder={d.order.tablePlaceholder}
                   />
+                  <span className="admin-field__hint">{d.order.tableNumberHint(maxTableNumber)}</span>
                 </label>
               ) : null}
               <button

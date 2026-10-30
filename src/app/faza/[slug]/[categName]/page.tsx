@@ -75,7 +75,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             {coffee.categories.map((sibling) => {
               const glyph = (
                 <span className="category-chip__icon" aria-hidden="true">
-                  {categoryIcon(sibling.id, sibling.name)}
+                  {sibling.image ? (
+                    // Category photos are optional; the glyph remains the fallback.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="category-chip__image" src={sibling.image} alt="" />
+                  ) : (
+                    categoryIcon(sibling.id, sibling.name)
+                  )}
                 </span>
               );
               return sibling.id === category.id ? (
@@ -94,7 +100,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
 
         {menuItems.length > 0 ? (
-          <OrderExperience coffeeSlug={slug} items={menuItems} cartItems={cartItems} offers={offers} />
+          <OrderExperience
+            coffeeSlug={slug}
+            tableCount={coffee.tableCount}
+            items={menuItems}
+            cartItems={cartItems}
+            offers={offers}
+          />
         ) : (
           <div className="container">
             <div className="sheet-state">

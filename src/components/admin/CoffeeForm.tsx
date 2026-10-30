@@ -10,6 +10,7 @@ export interface CoffeeFormValues {
   name: string;
   logo: string;
   cover?: string;
+  tableCount: number | null;
   slug: string;
 }
 
@@ -56,6 +57,7 @@ export function CoffeeForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [logo, setLogo] = useState(initial?.logo ?? "");
   const [cover, setCover] = useState(initial?.cover ?? "");
+  const [tableCount, setTableCount] = useState(initial?.tableCount?.toString() ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(mode === "edit" || slugReadOnly);
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -70,11 +72,13 @@ export function CoffeeForm({
     const nextName = initial?.name ?? "";
     const nextLogo = initial?.logo ?? "";
     const nextCover = initial?.cover ?? "";
+    const nextTableCount = initial?.tableCount?.toString() ?? "";
     const nextSlug = initial?.slug ?? "";
     const timer = window.setTimeout(() => {
       setName(nextName);
       setLogo(nextLogo);
       setCover(nextCover);
+      setTableCount(nextTableCount);
       setSlug(nextSlug);
       setPreview(nextLogo);
       setCoverPreview(nextCover);
@@ -84,7 +88,7 @@ export function CoffeeForm({
       setFieldError(null);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [initial?.name, initial?.logo, initial?.cover, initial?.slug, mode, slugReadOnly]);
+  }, [initial?.name, initial?.logo, initial?.cover, initial?.tableCount, initial?.slug, mode, slugReadOnly]);
 
   const takenSlugs = useMemo(() => {
     const set = new Set(reservedSlugs.map((value) => value.toLowerCase()));
@@ -141,6 +145,13 @@ export function CoffeeForm({
       setFieldError(t.slugInvalid);
       return;
     }
+    if (mode === "edit" && tableCount.trim()) {
+      const parsedTableCount = Number(tableCount);
+      if (!Number.isInteger(parsedTableCount) || parsedTableCount < 1 || parsedTableCount > 10000) {
+        setFieldError(t.tableCountInvalid);
+        return;
+      }
+    }
     if (mode === "edit") {
       const currentLogo = file ? preview : logo.trim();
       if (!file && (currentLogo.length === 0 || (!currentLogo.startsWith("blob:") && !isHttpUrl(currentLogo)))) {
@@ -158,7 +169,7 @@ export function CoffeeForm({
     setSubmitting(true);
     try {
       if (mode === "create") {
-        await onSubmit({ name: trimmedName, logo: "", slug: trimmedSlug });
+        await onSubmit({ name: trimmedName, logo: "", tableCount: null, slug: trimmedSlug });
         return;
       }
       const uploadedLogo = file ? await onUpload(file) : logo.trim();
@@ -167,6 +178,7 @@ export function CoffeeForm({
         name: trimmedName,
         logo: uploadedLogo,
         cover: uploadedCover || undefined,
+        tableCount: tableCount.trim() ? Number(tableCount) : null,
         slug: slugReadOnly ? (initialSlug ?? trimmedSlug) : trimmedSlug,
       });
     } catch {
@@ -199,6 +211,30 @@ export function CoffeeForm({
 
       {mode === "edit" ? (
         <>
+          <section className="coffee-form__table-settings" aria-labelledby="coffee-table-settings-title">
+            <div className="admin-form__head">
+              <h4 id="coffee-table-settings-title" className="admin-form__title">
+                {t.tableCountSectionTitle}
+              </h4>
+              <p className="admin-form__hint">{t.tableCountSectionDescription}</p>
+            </div>
+            <label className="admin-field">
+              <span className="admin-field__label">{t.tableCount}</span>
+              <input
+                className="admin-field__input"
+                type="number"
+                min={1}
+                max={10000}
+                step={1}
+                value={tableCount}
+                placeholder="1000"
+                disabled={busy || submitting}
+                onChange={(event) => setTableCount(event.target.value.replace(/\D/g, ""))}
+              />
+              <span className="admin-field__hint">{t.tableCountHint}</span>
+            </label>
+          </section>
+
           <label className="admin-field">
             <span className="admin-field__label">{t.cover}</span>
             <input

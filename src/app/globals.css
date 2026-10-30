@@ -1656,10 +1656,15 @@ img {
   display: grid;
   gap: 0.9rem;
   width: min(100%, 38rem);
-  list-style: none;
-  margin: 0;
-  padding: 0;
 }
+
+.orders-history__section-title {
+  width: min(100%, 38rem);
+  margin: 0.75rem 0 0;
+  color: var(--color-espresso-800);
+  font-size: 1.05rem;
+}
+
 .orders-history__card {
   padding: 1.1rem 1.25rem;
   background: #fffdf7;
@@ -4180,6 +4185,15 @@ img {
   color: var(--color-mocha-400);
 }
 
+.coffee-form__table-settings {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-amber-600) 28%, var(--color-line));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-amber-100) 38%, white);
+}
+
 .admin-upload-preview {
   width: 5rem;
   height: 5rem;
@@ -5691,6 +5705,14 @@ img {
   line-height: 1;
 }
 
+.category-chip__image {
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .category-chip:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-amber-600) 45%, transparent);
   outline-offset: 2px;
@@ -5701,6 +5723,17 @@ img {
   border-color: var(--color-espresso-800);
   color: var(--color-cream-100);
   box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 48rem) {
+  .category-chips {
+    gap: clamp(1rem, 1.8vw, 1.75rem);
+    padding-inline: clamp(2rem, 4vw, 4.5rem);
+  }
+
+  .category-chip {
+    padding-inline: 1.25rem;
+  }
 }
 
 @media (hover: hover) {

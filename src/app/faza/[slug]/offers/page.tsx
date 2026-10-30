@@ -52,7 +52,7 @@ export default async function OffersPage({ params }: OffersPageProps) {
           </div>
         )}
       </section>
-      <OrderCenter coffeeSlug={slug} offers={offers} />
+      <OrderCenter coffeeSlug={slug} tableCount={coffee.tableCount} offers={offers} />
     </main>
   );
 }

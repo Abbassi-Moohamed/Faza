@@ -166,6 +166,7 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
         name: values.name,
         logo: values.logo,
         cover: values.cover,
+        tableCount: values.tableCount,
         slug: values.slug,
       });
       loadCoffees();
@@ -229,6 +230,7 @@ export function AppAdmin({ initialView = "coffees" }: { initialView?: "coffees" 
           name: form.coffee.name,
           logo: form.coffee.logo,
           cover: form.coffee.cover ?? undefined,
+          tableCount: form.coffee.tableCount,
           slug: form.coffee.slug,
         }
       : undefined;

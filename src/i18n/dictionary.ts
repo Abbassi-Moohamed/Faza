@@ -17,7 +17,8 @@ export interface Dictionary {
     viewOrder: string;
     submit: string;
     submitting: string;
-    invalidCheckout: string;
+    invalidCheckout: (maxTableNumber: number) => string;
+    tableNumberHint: (maxTableNumber: number) => string;
     submitError: string;
     unavailableAtCheckout: string;
     sessionInProgress: string;
@@ -41,6 +42,7 @@ export interface Dictionary {
     noOrders: string;
     noOrdersHint: string;
     ordersCountLabel: (count: number) => string;
+    activeSessionOrders: string;
     ordersLoadError: string;
     backToMenu: string;
     sessionClosed: string;
@@ -192,6 +194,11 @@ export interface Dictionary {
       coverPlaceholder: string;
       coverHint: string;
       coverPreview: string;
+      tableCountSectionTitle: string;
+      tableCountSectionDescription: string;
+      tableCount: string;
+      tableCountHint: string;
+      tableCountInvalid: string;
       slug: string;
       slugPlaceholder?: string;
       slugCreateHint?: string;

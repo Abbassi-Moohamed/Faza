@@ -456,6 +456,7 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
         name: values.name,
         logo: values.logo,
         cover: values.cover,
+        tableCount: values.tableCount,
       });
       setCoffee(updated);
       setNotice(d.coffeeForm.updated(updated.name));
@@ -839,7 +840,13 @@ export function CoffeeAdmin({ coffeeSlug, initialView = "menu" }: CoffeeAdminPro
               <CoffeeForm
                 dict={dict}
                 mode="edit"
-                initial={{ name: coffee.name, logo: coffee.logo, cover: coffee.cover ?? undefined, slug: coffee.slug }}
+                initial={{
+                  name: coffee.name,
+                  logo: coffee.logo,
+                  cover: coffee.cover ?? undefined,
+                  tableCount: coffee.tableCount,
+                  slug: coffee.slug,
+                }}
                 title={d.coffeeForm.editTitle}
                 busy={settingsBusy}
                 error={settingsError}

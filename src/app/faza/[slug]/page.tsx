@@ -43,7 +43,7 @@ export default async function CoffeePage({ params }: CoffeePageProps) {
           offersHref={offers.length > 0 ? `/faza/${slug}/offers` : undefined}
           offersCount={offers.length}
         />
-        <OrderCenter coffeeSlug={slug} offers={offers} />
+        <OrderCenter coffeeSlug={slug} tableCount={coffee.tableCount} offers={offers} />
       </main>
     </div>
   );

@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: OfferPageProps): Promise<Meta
 export default async function OfferPage({ params }: OfferPageProps) {
   const { slug, offerId } = await params;
   const d = getDictionary();
-  await resolvePublicCoffee(slug);
+  const coffee = await resolvePublicCoffee(slug);
 
   const offers = await getCoffeeOffers(slug);
   const offer = offers.find((entry) => entry.id === offerId);
@@ -114,7 +114,7 @@ export default async function OfferPage({ params }: OfferPageProps) {
           </ul>
         </section>
       </article>
-      <OrderCenter coffeeSlug={slug} offers={offers} />
+      <OrderCenter coffeeSlug={slug} tableCount={coffee.tableCount} offers={offers} />
     </main>
   );
 }

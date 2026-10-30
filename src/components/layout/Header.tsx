@@ -5,8 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { siteConfig } from "@/config/site";
+import { ApiClientError } from "@/lib/api";
 import { cartEventName } from "@/lib/cart";
-import { readSessionOrders } from "@/lib/session-orders";
+import { listSessionOrders } from "@/lib/orders";
+import { clearTableSession, readTableSession, tableSessionEventName } from "@/lib/table-session";
+import { sessionOrdersEventName } from "@/lib/session-orders";
 
 interface HeaderProps {
   myOrdersLabel: string;
@@ -24,15 +27,65 @@ export function Header({ myOrdersLabel, brandLabel }: HeaderProps) {
   useEffect(() => {
     if (!coffeeSlug) return;
 
-    const syncOrders = () => {
-      setOrderCount(readSessionOrders(coffeeSlug).length);
+    let active = true;
+    let syncing = false;
+    const syncOrders = async () => {
+      if (syncing) return;
+      syncing = true;
+      const session = readTableSession(coffeeSlug);
+      if (!session) {
+        if (active) setOrderCount(0);
+        syncing = false;
+        return;
+      }
+
+      try {
+        const result = await listSessionOrders(session.token);
+        if (!active) return;
+        if (result.session.status === "CLOSED") {
+          clearTableSession(coffeeSlug);
+          setOrderCount(0);
+        } else {
+          setOrderCount(result.session.orderCount);
+        }
+      } catch (error) {
+        if (!active) return;
+        if (error instanceof ApiClientError && error.status === 401) {
+          clearTableSession(coffeeSlug);
+          setOrderCount(0);
+        }
+      } finally {
+        syncing = false;
+      }
     };
-    syncOrders();
+    const onSessionChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ coffeeSlug?: string }>).detail;
+      if (detail?.coffeeSlug === coffeeSlug) void syncOrders();
+    };
+    const onVisibilityChange = () => {
+      if (!document.hidden) void syncOrders();
+    };
+    void syncOrders();
+    const timer = window.setInterval(() => void syncOrders(), 15_000);
     window.addEventListener(cartEventName(), syncOrders);
     window.addEventListener("storage", syncOrders);
+    window.addEventListener(tableSessionEventName(), onSessionChange);
+    const onOrdersChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ coffeeSlug?: string }>).detail;
+      if (detail?.coffeeSlug === coffeeSlug) void syncOrders();
+    };
+    window.addEventListener(sessionOrdersEventName(), onOrdersChanged);
+    window.addEventListener("focus", syncOrders);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
+      active = false;
+      window.clearInterval(timer);
       window.removeEventListener(cartEventName(), syncOrders);
       window.removeEventListener("storage", syncOrders);
+      window.removeEventListener(tableSessionEventName(), onSessionChange);
+      window.removeEventListener(sessionOrdersEventName(), onOrdersChanged);
+      window.removeEventListener("focus", syncOrders);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [coffeeSlug, pathname]);
 

@@ -27,6 +27,7 @@ export interface CoffeeDto {
   logo: string;
   cover: string | null;
   slug: string;
+  tableCount: number | null;
   categories: CategoryDto[];
 }
 export interface ItemMediaDto {
@@ -53,6 +54,7 @@ export interface AdminCoffeeDto {
   logo: string;
   cover: string | null;
   slug: string;
+  tableCount: number | null;
   categoryCount: number;
   createdAt: string;
   updatedAt: string;
@@ -134,6 +136,7 @@ export interface UpdateCoffeeBody {
   name?: string;
   logo?: string;
   cover?: string;
+  tableCount?: number | null;
   slug?: string;
 }
 /** Coffee admins can edit their own coffee but never its slug. */

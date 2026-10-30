@@ -4,6 +4,17 @@ export interface ActiveTableSession {
   lastUpdatedAt: string;
 }
 
+const sessionEventName = "faza-table-session-change";
+
+function announceSessionChange(coffeeSlug: string, status: "active" | "closed") {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(sessionEventName, { detail: { coffeeSlug, status } }));
+}
+
+export function tableSessionEventName() {
+  return sessionEventName;
+}
+
 export function tableSessionStorageKey(coffeeSlug: string) {
   return `faza:table-session:${coffeeSlug}`;
 }
@@ -35,6 +46,7 @@ export function writeTableSession(coffeeSlug: string, session: ActiveTableSessio
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(tableSessionStorageKey(coffeeSlug), JSON.stringify(session));
+    announceSessionChange(coffeeSlug, "active");
   } catch {
     // Local storage may be unavailable; the UI should recover gracefully.
   }
@@ -44,6 +56,7 @@ export function clearTableSession(coffeeSlug: string) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(tableSessionStorageKey(coffeeSlug));
+    announceSessionChange(coffeeSlug, "closed");
   } catch {
     // Ignore browser storage failures.
   }
